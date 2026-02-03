@@ -1,16 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Counter from './components/Counter'; 
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Header title="Головна сторінка" />
+      <Header title="Лабораторна №3" />
 
       <View style={styles.content}>
-        <Text style={styles.text}>Привіт, React Native!</Text>
+        {/* Тут тепер живе наш лічильник */}
+        <Counter />
         <StatusBar style="auto" />
       </View>
 
@@ -23,15 +25,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    justifyContent: 'space-between', 
+    justifyContent: 'space-between',
   },
   content: {
-    flex: 1, 
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    fontSize: 24,
-    color: 'blue',
+    flex: 1,
+    justifyContent: 'center', 
   },
 });
