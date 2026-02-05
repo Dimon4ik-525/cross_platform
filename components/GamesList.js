@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, FlatList, StyleSheet, Image, 
-  ActivityIndicator, TextInput, TouchableOpacity, Keyboard, Linking 
+  ActivityIndicator, TextInput, TouchableOpacity, Keyboard, Platform 
 } from 'react-native';
 
-export default function GamesList() {
+export default function GamesList({ navigation }) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
-  
   const [searchText, setSearchText] = useState('');
   const [activeFilter, setActiveFilter] = useState('best');
 
@@ -50,11 +49,6 @@ export default function GamesList() {
     fetchGames(category);
   };
 
-  const openGameLink = (dealID) => {
-    const url = `https://www.cheapshark.com/redirect?dealID=${dealID}`;
-    Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
-  };
-
   return (
     <View style={styles.listContainer}>
       
@@ -94,22 +88,23 @@ export default function GamesList() {
         </View>
       ) : (
         <FlatList
+          // ДОДАНО: height: '100%' щоб список займав всю висоту батька
+          style={{ flex: 1, width: '100%' }} 
           data={games}
           keyExtractor={(item) => item.dealID}
-          contentContainerStyle={{ padding: 10 }}
+          contentContainerStyle={{ padding: 10, paddingBottom: 20 }}
           renderItem={({ item }) => {
             const hasDiscount = parseFloat(item.savings) > 0;
 
             return (
               <TouchableOpacity 
                 activeOpacity={0.7} 
-                onPress={() => openGameLink(item.dealID)}
+                onPress={() => navigation.navigate('Details', { game: item })}
               >
                 <View style={styles.card}>
                   <Image source={{ uri: item.thumb }} style={styles.thumb} />
                   
                   <View style={styles.info}>
-                    {/* ТУТ БУВ РЕЙТИНГ, ТЕПЕР ТІЛЬКИ НАЗВА */}
                     <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
                   </View>
                   
@@ -151,6 +146,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1b2838',
     width: '100%',
+    // ДОДАНО: overflow hidden тут теж важливий
+    overflow: 'hidden', 
   },
   searchContainer: {
     flexDirection: 'row',
@@ -171,6 +168,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 15,
     borderRadius: 5,
+    ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   searchButtonText: { fontSize: 18 },
   filtersContainer: {
@@ -187,6 +185,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#4b6b8b',
+    ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   filterBtnActive: {
     backgroundColor: '#66c0f4',
@@ -195,7 +194,6 @@ const styles = StyleSheet.create({
   filterText: { color: '#8f98a0', fontWeight: 'bold' },
   filterTextActive: { color: '#fff' },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  // Card styles
   card: {
     flexDirection: 'row',
     backgroundColor: '#16202d',
@@ -205,11 +203,11 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     borderRadius: 4,
     overflow: 'hidden',
+    ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   thumb: { width: 120, height: '100%', resizeMode: 'cover' },
   info: { flex: 1, paddingHorizontal: 10, justifyContent: 'center' },
   title: { color: '#c7d5e0', fontSize: 13, fontWeight: 'bold' },
-  // Стиль rating видалено
   priceBlock: { flexDirection: 'row', alignItems: 'center' },
   discountBadge: { backgroundColor: '#4c6b22', paddingVertical: 2, paddingHorizontal: 6, marginRight: 8 },
   discountText: { color: '#a4d007', fontWeight: 'bold', fontSize: 14 },
