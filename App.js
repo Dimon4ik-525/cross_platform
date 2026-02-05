@@ -1,34 +1,28 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
-import Counter from './components/Counter'; 
+import GamesList from './components/GamesList';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Header title="Лабораторна №3" />
-
-      <View style={styles.content}>
-        {/* Тут тепер живе наш лічильник */}
-        <Counter />
-        <StatusBar style="auto" />
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        <Header />
+        <GamesList />
+        <Footer />
       </View>
-
-      <Footer text="Всі права захищено © 2026" />
-    </View>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#1b2838',
     justifyContent: 'space-between',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center', 
   },
 });
