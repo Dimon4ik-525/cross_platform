@@ -1,13 +1,10 @@
 import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, View } from 'react-native';
-// Імпортуємо спеціальний компонент, який сам знає про "чубчик"
 import { SafeAreaView } from 'react-native-safe-area-context';
-// 1. Імпорти для навігації та іконок
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Header() {
-  // 2. Отримуємо об'єкт навігації
   const navigation = useNavigation();
 
   return (
@@ -16,15 +13,24 @@ export default function Header() {
       edges={['top']} 
     >
       <View style={styles.headerContent}>
-        {/* Логотип (по центру) */}
+        
+        {/* 1. НОВА КНОПКА: Профіль (Зліва) */}
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Ionicons name="person-circle" size={28} color="#66c0f4" />
+        </TouchableOpacity>
+
+        {/* Логотип (Центр) */}
         <Text style={styles.logoText}>
           STEAM<Text style={styles.logoHighlight}>DEALS</Text>
         </Text>
 
-        {/* 3. Кнопка дзвіночка (справа) */}
+        {/* 3. Кнопка дзвіночка (Справа) */}
         <TouchableOpacity 
           style={styles.bellButton}
-          onPress={() => navigation.navigate('Subs')} // Перехід на екран підписок
+          onPress={() => navigation.navigate('Subs')} 
         >
           <Ionicons name="notifications" size={24} color="#66c0f4" />
         </TouchableOpacity>
@@ -39,36 +45,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: '#2a475e',
     width: '100%',
-    
-    // Тінь
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8,
   },
-  // Контейнер для вмісту (щоб вирівняти лого і кнопку)
   headerContent: {
     width: '100%',
-    alignItems: 'center', // Центруємо логотип
+    alignItems: 'center', 
     justifyContent: 'center',
     paddingBottom: 15,
     paddingTop: 10,
-    position: 'relative', // Важливо для абсолютної кнопки
+    position: 'relative', 
   },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#c7d5e0',
-    letterSpacing: 2,
-  },
-  logoHighlight: {
-    color: '#66c0f4',
-  },
-  // Стиль для кнопки дзвіночка
+  logoText: { fontSize: 24, fontWeight: 'bold', color: '#c7d5e0', letterSpacing: 2 },
+  logoHighlight: { color: '#66c0f4' },
+  
+  // Кнопка дзвіночка (Справа)
   bellButton: {
-    position: 'absolute', // "Вириваємо" кнопку з потоку
-    right: 20,            // Притискаємо до правого краю
-    bottom: 15,           // Вирівнюємо по висоті тексту
+    position: 'absolute',
+    right: 20,
+    bottom: 15,
+  },
+  // НОВА КНОПКА (Зліва)
+  profileButton: {
+    position: 'absolute',
+    left: 20,
+    bottom: 12, // Трохи нижче, щоб вирівняти з текстом
   }
 });
