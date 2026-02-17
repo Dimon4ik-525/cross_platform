@@ -11,7 +11,8 @@ import { UserProvider } from './context/UserContext';
 import SubsScreen from './screens/SubsScreen';
 import HomeScreen from './screens/HomeScreen';
 import DetailsScreen from './screens/DetailsScreen';
-import ProfileScreen from './screens/ProfileScreen'; // 2. Імпорт профілю
+import ProfileScreen from './screens/ProfileScreen';
+import UsersScreen from './screens/UsersScreen'; // <--- 1. НОВИЙ ІМПОРТ
 
 const Stack = createStackNavigator();
 
@@ -21,7 +22,8 @@ const linking = {
       Home: '',
       Details: 'game',
       Subs: 'subscriptions',
-      Profile: 'profile', // Додали шлях для вебу
+      Profile: 'profile',
+      Users: 'community', // <--- 2. НОВИЙ ШЛЯХ ДЛЯ ВЕБУ
     },
   },
 };
@@ -67,13 +69,25 @@ export default function App() {
               }}
             />
 
-            {/* 4. ДОДАЛИ ЕКРАН ПРОФІЛЮ */}
             <Stack.Screen 
               name="Profile" 
               component={ProfileScreen} 
               options={{
                 headerShown: true,
                 title: 'Мій профіль',
+                headerStyle: { backgroundColor: '#171a21' },
+                headerTintColor: '#c7d5e0',
+                headerBackImage: () => <Ionicons name="arrow-back" size={32} color="#c7d5e0" style={{ marginLeft: 10 }} />,
+              }}
+            />
+
+            {/* --- 3. ДОДАЛИ ЕКРАН СПІЛЬНОТИ (USERS) --- */}
+            <Stack.Screen 
+              name="Users" 
+              component={UsersScreen} 
+              options={{
+                headerShown: true,
+                title: 'Спільнота',
                 headerStyle: { backgroundColor: '#171a21' },
                 headerTintColor: '#c7d5e0',
                 headerBackImage: () => <Ionicons name="arrow-back" size={32} color="#c7d5e0" style={{ marginLeft: 10 }} />,
