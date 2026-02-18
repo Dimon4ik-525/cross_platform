@@ -1,13 +1,13 @@
 import React, { useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native'; // Додали ScrollView
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { UserContext } from '../context/UserContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { useNavigation } from '@react-navigation/native'; // Для навігації
+import { useNavigation } from '@react-navigation/native';
 
 export default function ProfileScreen() {
   const { userName, setUserName } = useContext(UserContext);
-  const navigation = useNavigation(); // Хук навігації
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
@@ -34,13 +34,22 @@ export default function ProfileScreen() {
 
         <View style={styles.separator} />
 
-        {/* --- НОВА КНОПКА ДЛЯ ЛАБОРАТОРНОЇ 7 --- */}
+        {/* Кнопка Лаби 7 */}
         <TouchableOpacity 
           style={styles.labButton}
           onPress={() => navigation.navigate('Users')}
         >
           <Text style={styles.labButtonText}>👥 ВІДКРИТИ СПИСОК ГЕЙМЕРІВ</Text>
           <Text style={styles.labSubText}>(API запит до jsonplaceholder)</Text>
+        </TouchableOpacity>
+
+        {/* --- НОВА КНОПКА ДЛЯ ЛАБОРАТОРНОЇ 8 --- */}
+        <TouchableOpacity 
+          style={[styles.labButton, styles.supportButton]} // Додатковий стиль
+          onPress={() => navigation.navigate('Support')}
+        >
+          <Text style={styles.labButtonText}>✉️ НАПИСАТИ В ПІДТРИМКУ</Text>
+          <Text style={styles.labSubText}>(Робота з формами та валідацією)</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -70,7 +79,6 @@ const styles = StyleSheet.create({
 
   separator: { height: 1, backgroundColor: '#2a475e', width: '100%', marginVertical: 30 },
 
-  // Стилі кнопки лаби
   labButton: {
     backgroundColor: '#171a21',
     paddingVertical: 15,
@@ -81,6 +89,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     ...Platform.select({ web: { cursor: 'pointer' } }),
+  },
+  // Стиль відступу для кнопки підтримки
+  supportButton: {
+    marginTop: 15,
+    borderColor: '#ff5252', // Червона обводка для контрасту
   },
   labButtonText: { color: '#66c0f4', fontWeight: 'bold', fontSize: 16 },
   labSubText: { color: '#4b6b8b', fontSize: 12, marginTop: 5 }

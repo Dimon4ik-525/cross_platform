@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, View, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +14,6 @@ export default function Header() {
     >
       <View style={styles.headerContent}>
         
-        {/* 1. НОВА КНОПКА: Профіль (Зліва) */}
         <TouchableOpacity 
           style={styles.profileButton}
           onPress={() => navigation.navigate('Profile')}
@@ -22,12 +21,10 @@ export default function Header() {
           <Ionicons name="person-circle" size={28} color="#66c0f4" />
         </TouchableOpacity>
 
-        {/* Логотип (Центр) */}
         <Text style={styles.logoText}>
           STEAM<Text style={styles.logoHighlight}>DEALS</Text>
         </Text>
 
-        {/* 3. Кнопка дзвіночка (Справа) */}
         <TouchableOpacity 
           style={styles.bellButton}
           onPress={() => navigation.navigate('Subs')} 
@@ -45,7 +42,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: '#2a475e',
     width: '100%',
-    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8,
+    
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        // !!! ГОЛОВНА ЗМІНА !!!
+        // position: 'sticky' змушує хедер "липнути" до верху браузера при скролі
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 1000, // Гарантує, що хедер буде поверх списку ігор
+        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)', 
+      }
+    }),
   },
   headerContent: {
     width: '100%',
@@ -57,17 +73,6 @@ const styles = StyleSheet.create({
   },
   logoText: { fontSize: 24, fontWeight: 'bold', color: '#c7d5e0', letterSpacing: 2 },
   logoHighlight: { color: '#66c0f4' },
-  
-  // Кнопка дзвіночка (Справа)
-  bellButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 15,
-  },
-  // НОВА КНОПКА (Зліва)
-  profileButton: {
-    position: 'absolute',
-    left: 20,
-    bottom: 12, // Трохи нижче, щоб вирівняти з текстом
-  }
+  bellButton: { position: 'absolute', right: 20, bottom: 15 },
+  profileButton: { position: 'absolute', left: 20, bottom: 12 }
 });
