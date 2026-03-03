@@ -3,7 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, StyleSheet } from 'react-native'; // Додав StyleSheet
+import { Platform, StyleSheet } from 'react-native';
 
 import { UserProvider } from './context/UserContext';
 
@@ -14,6 +14,8 @@ import DetailsScreen from './screens/DetailsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import UsersScreen from './screens/UsersScreen';
 import SupportScreen from './screens/SupportScreen';
+// ---> ДОДАЛИ ІМПОРТ НОВОГО ЕКРАНУ ГАЛЕРЕЇ <---
+import GalleryScreen from './screens/GalleryScreen'; 
 
 const Stack = createStackNavigator();
 
@@ -26,6 +28,7 @@ const linking = {
       Profile: 'profile',
       Users: 'community',
       Support: 'support',
+      Gallery: 'gallery', // Додали лінк для галереї
     },
   },
 };
@@ -33,10 +36,6 @@ const linking = {
 export default function App() {
   return (
     <UserProvider>
-      {/* ПОВЕРТАЄМО ФІКСОВАНУ ВИСОТУ 
-          Ми кажемо: займай 100vh (все вікно) і обрізай все, що вилазить (overflow: hidden).
-          Скрол будемо робити всередині компонентів.
-      */}
       <SafeAreaProvider style={styles.appContainer}>
         <NavigationContainer linking={linking}>
           <StatusBar style="light" />
@@ -84,6 +83,14 @@ export default function App() {
               options={{ headerShown: true, title: 'Підтримка', headerStyle: { backgroundColor: '#171a21' }, headerTintColor: '#c7d5e0', headerBackImage: () => <Ionicons name="arrow-back" size={32} color="#c7d5e0" style={{ marginLeft: 10 }} /> }}
             />
 
+            {/* ---> ДОДАЛИ НОВИЙ ЕКРАН ГАЛЕРЕЇ <--- */}
+            {/* headerShown: false, бо ми використаємо наш кастомний Header всередині екрану */}
+            <Stack.Screen 
+              name="Gallery" 
+              component={GalleryScreen} 
+              options={{ headerShown: false }} 
+            />
+
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>
@@ -95,7 +102,6 @@ const styles = StyleSheet.create({
   appContainer: {
     flex: 1,
     backgroundColor: '#1b2838',
-    // ВАЖЛИВО: Жорстко фіксуємо висоту для вебу
     ...Platform.select({
       web: {
         height: '100vh',

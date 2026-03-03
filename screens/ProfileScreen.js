@@ -90,6 +90,15 @@ export default function ProfileScreen() {
           <Text style={styles.labSubText}>(Робота з формами та валідацією)</Text>
         </TouchableOpacity>
 
+        {/* ---> ДОДАЙ ЦЮ КНОПКУ (Лаба 10) <--- */}
+        <TouchableOpacity 
+          style={[styles.labButton, { marginTop: 15, borderColor: '#a4d007' }]} 
+          onPress={() => navigation.navigate('Gallery')}
+        >
+          <Text style={styles.labButtonText}>🖼 ВІДКРИТИ ГАЛЕРЕЮ</Text>
+          <Text style={styles.labSubText}>(Робота з зображеннями)</Text>
+        </TouchableOpacity>
+
       </ScrollView>
 
       <Footer />
