@@ -1,90 +1,171 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, Linking, TouchableOpacity, Platform, ScrollView, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // 1. Імпорт сховища
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, Image, Linking, TouchableOpacity, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
+import { UserContext } from '../context/UserContext'; 
+import { COLORS } from '../theme/colors'; 
 import SubscriptionModal from '../components/SubscriptionModal';
 import Footer from '../components/Footer';
 
 export default function DetailsScreen({ route }) {
   const { game } = route.params;
+  const { countryCode, countryName } = useContext(UserContext); 
+
   const [modalVisible, setModalVisible] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false); // 2. Стан підписки
+  const [isSubscribed, setIsSubscribed] = useState(false); 
 
-  // Логіка знижки
-  const savings = parseFloat(game.savings);
-  const hasDiscount = savings > 0;
+  const [highResImage, setHighResImage] = useState(game.thumb);
+  const [isSteamLoading, setIsSteamLoading] = useState(true);
 
-  // 3. Перевіряємо при старті, чи гра вже збережена
+  const cheapSharkSavings = parseFloat(game.savings);
+  const [displayNewPrice, setDisplayNewPrice] = useState(`$${game.salePrice}`);
+  const [displayOldPrice, setDisplayOldPrice] = useState(cheapSharkSavings > 0 ? `$${game.normalPrice}` : null);
+  const [displayDiscount, setDisplayDiscount] = useState(cheapSharkSavings > 0 ? Math.round(cheapSharkSavings) : 0);
+
+  const gameTitle = game.title || game.external || 'Невідома назва';
+
   useEffect(() => {
     checkSubscriptionStatus();
+    fetchSteamPrice(); 
   }, []);
+
+  const fetchSteamPrice = async () => {
+    if (!game.steamAppID) {
+      setIsSteamLoading(false);
+      return; 
+    }
+
+    try {
+      // Підстраховка: якщо регіон не визначився і стоїть US, примусово ставимо UA для гривень
+      const safeCountryCode = (countryCode === 'US' || !countryCode) ? 'UA' : countryCode;
+      const cacheBuster = new Date().getTime();
+      const targetUrl = `https://store.steampowered.com/api/appdetails?appids=${game.steamAppID}&cc=${safeCountryCode}&l=ukrainian&t=${cacheBuster}`;
+      
+      let data = null;
+
+      if (Platform.OS === 'web') {
+        // Використовуємо надійний /get
+        const fetchUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+        const res = await fetch(fetchUrl);
+        const allOriginsData = await res.json();
+
+        // БРОНЕБІЙНИЙ ЗАХИСТ: перевіряємо, чи Steam не повернув помилку замість даних
+        if (allOriginsData && allOriginsData.contents) {
+          try {
+            data = JSON.parse(allOriginsData.contents);
+          } catch (parseError) {
+            console.warn("Steam повернув не JSON (можливо, блокування). Залишаємо базові ціни.");
+            setIsSteamLoading(false);
+            return; 
+          }
+        } else {
+          setIsSteamLoading(false);
+          return;
+        }
+      } else {
+        // Для телефона запит прямий
+        const res = await fetch(targetUrl);
+        data = await res.json();
+      }
+
+      if (!data) {
+        setIsSteamLoading(false);
+        return;
+      }
+
+      const steamData = data[game.steamAppID];
+
+      if (steamData && steamData.success && steamData.data) {
+        if (steamData.data.header_image) {
+            setHighResImage(steamData.data.header_image);
+        }
+
+        if (steamData.data.is_free) {
+          setDisplayNewPrice("Безкоштовно");
+          setDisplayOldPrice(null);
+          setDisplayDiscount(0);
+        } else if (steamData.data.price_overview) {
+          const overview = steamData.data.price_overview;
+          setDisplayNewPrice(overview.final_formatted);
+          
+          if (overview.discount_percent > 0) {
+            setDisplayOldPrice(overview.initial_formatted);
+            setDisplayDiscount(overview.discount_percent);
+          } else {
+            setDisplayOldPrice(null);
+            setDisplayDiscount(0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Помилка підключення до Steam:", error);
+    } finally {
+      setIsSteamLoading(false); 
+    }
+  };
 
   const checkSubscriptionStatus = async () => {
     try {
       const jsonValue = await AsyncStorage.getItem('@subscriptions');
       const subs = jsonValue != null ? JSON.parse(jsonValue) : [];
-      // Шукаємо гру по ID
-      const exists = subs.find(item => item.dealID === game.dealID);
+      const exists = subs.find(item => item.dealID === game.dealID || item.gameID === game.gameID);
       setIsSubscribed(!!exists);
-    } catch(e) {
-      console.error(e);
-    }
+    } catch(e) {}
   };
 
-  // 4. Функція перемикання (Додати/Видалити)
   const toggleSubscription = async () => {
     try {
       const jsonValue = await AsyncStorage.getItem('@subscriptions');
       let subs = jsonValue != null ? JSON.parse(jsonValue) : [];
 
       if (isSubscribed) {
-        // Якщо вже є -> ВИДАЛЯЄМО
-        subs = subs.filter(item => item.dealID !== game.dealID);
+        subs = subs.filter(item => item.dealID !== game.dealID && item.gameID !== game.gameID);
         Alert.alert("Відписались", "Гру видалено з ваших підписок.");
       } else {
-        // Якщо немає -> ДОДАЄМО
         subs.push(game);
-        setModalVisible(true); // Показуємо красиву модалку
+        setModalVisible(true); 
       }
 
-      // Зберігаємо оновлений масив
       await AsyncStorage.setItem('@subscriptions', JSON.stringify(subs));
-      setIsSubscribed(!isSubscribed); // Міняємо колір кнопки
-
-    } catch (e) {
-      console.error("Помилка збереження", e);
-    }
+      setIsSubscribed(!isSubscribed); 
+    } catch (e) {}
   };
 
   const openInSteam = () => {
-    const url = `https://www.cheapshark.com/redirect?dealID=${game.dealID}`;
+    const url = game.steamAppID 
+        ? `https://store.steampowered.com/app/${game.steamAppID}/`
+        : `https://www.cheapshark.com/redirect?dealID=${game.dealID}`;
     Linking.openURL(url);
   };
 
   return (
     <View style={styles.mainContainer}>
-      
-      <SubscriptionModal 
-        visible={modalVisible} 
-        onClose={() => setModalVisible(false)}
-        gameTitle={game.title}
-      />
+      <SubscriptionModal visible={modalVisible} onClose={() => setModalVisible(false)} gameTitle={gameTitle} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.innerContainer}>
-          <Image source={{ uri: game.thumb }} style={styles.image} />
           
-          <Text style={styles.title}>{game.title}</Text>
+          <Image source={{ uri: highResImage }} style={styles.image} />
           
+          <Text style={styles.title}>{gameTitle}</Text>
+          <Text style={styles.regionText}>📍 Регіон: {countryName}</Text>
+
           <View style={styles.priceContainer}>
-            {hasDiscount && (
-              <Text style={styles.oldPrice}>${game.normalPrice}</Text>
-            )}
-            <Text style={styles.newPrice}>${game.salePrice}</Text>
-            {hasDiscount && (
-              <View style={styles.badge}>
-                  <Text style={styles.badgeText}>-{Math.round(savings)}%</Text>
-              </View>
+            {isSteamLoading ? (
+               <ActivityIndicator size="large" color={COLORS.primary} />
+            ) : (
+               <>
+                 {displayOldPrice && (
+                   <Text style={styles.oldPrice}>{displayOldPrice}</Text>
+                 )}
+                 <Text style={styles.newPrice}>{displayNewPrice}</Text>
+                 
+                 {displayDiscount > 0 && (
+                   <View style={styles.badge}>
+                       <Text style={styles.badgeText}>-{displayDiscount}%</Text>
+                   </View>
+                 )}
+               </>
             )}
           </View>
 
@@ -92,7 +173,6 @@ export default function DetailsScreen({ route }) {
             <Text style={styles.steamButtonText}>ВІДКРИТИ В STEAM</Text>
           </TouchableOpacity>
           
-          {/* 5. Кнопка змінює стиль залежно від isSubscribed */}
           <TouchableOpacity 
             style={[styles.subscribeButton, isSubscribed && styles.subscribedButtonActive]} 
             onPress={toggleSubscription}
@@ -105,41 +185,27 @@ export default function DetailsScreen({ route }) {
 
         </View>
       </ScrollView>
-
       <Footer />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: '#1b2838' },
+  mainContainer: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingBottom: 20 },
   innerContainer: { alignItems: 'center', padding: 20, width: '100%', maxWidth: 600, alignSelf: 'center' },
-  image: { width: '100%', height: 250, resizeMode: 'contain', marginBottom: 25 },
-  title: { fontSize: 26, color: '#c7d5e0', fontWeight: 'bold', textAlign: 'center', marginBottom: 25 },
-  priceContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 35 },
-  oldPrice: { color: '#888', textDecorationLine: 'line-through', fontSize: 20, marginRight: 12 },
-  newPrice: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginRight: 15 },
-  badge: { backgroundColor: '#4c6b22', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6 },
-  badgeText: { color: '#a4d007', fontWeight: 'bold', fontSize: 18 },
-  steamButton: {
-    backgroundColor: '#66c0f4', paddingVertical: 15, paddingHorizontal: 40, borderRadius: 30,
-    elevation: 5, marginBottom: 15, width: '100%', maxWidth: 350, alignItems: 'center',
-    ...Platform.select({ web: { cursor: 'pointer' } }),
-  },
-  steamButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 18, textTransform: 'uppercase', letterSpacing: 1 },
-  
-  // Стилі для кнопки підписки
-  subscribeButton: {
-    backgroundColor: 'transparent', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 30,
-    borderWidth: 1, borderColor: '#8f98a0', width: '100%', maxWidth: 350, alignItems: 'center',
-    ...Platform.select({ web: { cursor: 'pointer' } }),
-  },
-  // Стиль активної кнопки (зелений)
-  subscribedButtonActive: {
-    backgroundColor: '#4c6b22', 
-    borderColor: '#4c6b22',
-  },
-  subscribeText: { color: '#8f98a0', fontWeight: 'bold', fontSize: 14 },
-  subscribeTextActive: { color: '#fff' }
+  image: { width: '100%', height: 250, resizeMode: 'contain', marginBottom: 20 },
+  title: { fontSize: 26, color: COLORS.textPrimary, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
+  regionText: { color: COLORS.primary, fontSize: 14, marginBottom: 20, fontWeight: 'bold' },
+  priceContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 35, minHeight: 40 },
+  oldPrice: { color: COLORS.textMuted, textDecorationLine: 'line-through', fontSize: 20, marginRight: 12 },
+  newPrice: { color: COLORS.textPrimary, fontSize: 32, fontWeight: 'bold', marginRight: 15 },
+  badge: { backgroundColor: COLORS.primary, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6 },
+  badgeText: { color: COLORS.surfaceDark, fontWeight: 'bold', fontSize: 18 },
+  steamButton: { backgroundColor: COLORS.primary, paddingVertical: 15, paddingHorizontal: 40, borderRadius: 30, elevation: 5, marginBottom: 15, width: '100%', maxWidth: 350, alignItems: 'center', ...Platform.select({ web: { cursor: 'pointer' } }) },
+  steamButtonText: { color: COLORS.surfaceDark, fontWeight: 'bold', fontSize: 18, textTransform: 'uppercase', letterSpacing: 1 },
+  subscribeButton: { backgroundColor: 'transparent', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 30, borderWidth: 1, borderColor: COLORS.textMuted, width: '100%', maxWidth: 350, alignItems: 'center', ...Platform.select({ web: { cursor: 'pointer' } }) },
+  subscribedButtonActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  subscribeText: { color: COLORS.textMuted, fontWeight: 'bold', fontSize: 14 },
+  subscribeTextActive: { color: COLORS.surfaceDark }
 });

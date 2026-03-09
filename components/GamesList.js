@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, StyleSheet, Image, 
   ActivityIndicator, TextInput, TouchableOpacity, Keyboard, Platform 
 } from 'react-native';
+import { COLORS } from '../theme/colors';
 
 export default function GamesList({ navigation }) {
   const [games, setGames] = useState([]);
@@ -13,10 +14,13 @@ export default function GamesList({ navigation }) {
 
   const fetchGames = (filter, query = '') => {
     setLoading(true);
-    let url = 'https://www.cheapshark.com/api/1.0/deals?storeID=1&pageSize=20';
+    
+    // Використовуємо ТІЛЬКИ /deals для всього! Він віддає правильні ціни та знижки.
+    let url = `https://www.cheapshark.com/api/1.0/deals?storeID=1&pageSize=30`;
 
     if (query) {
-      url += `&title=${query}`;
+      // Додаємо пошуковий запит
+      url += `&title=${encodeURIComponent(query)}`;
     } else {
       if (filter === 'best') url += '&sortBy=Savings&onSale=1';
       if (filter === 'cheap') url += '&upperPrice=5&sortBy=Price&onSale=1';
@@ -25,7 +29,18 @@ export default function GamesList({ navigation }) {
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
-        setGames(data);
+        let finalData = data;
+
+        // Для категорій залишаємо лише ті, де дійсно є знижка
+        if (!query) {
+          finalData = data.filter(game => {
+            const oldP = parseFloat(game.normalPrice || 0);
+            const newP = parseFloat(game.salePrice || 0);
+            return oldP > newP;
+          });
+        }
+        
+        setGames(finalData);
         setLoading(false);
       })
       .catch((err) => {
@@ -40,6 +55,7 @@ export default function GamesList({ navigation }) {
 
   const handleSearch = () => {
     Keyboard.dismiss();
+    if(searchText.trim() === '') return;
     fetchGames(null, searchText);
     setActiveFilter('');
   };
@@ -52,14 +68,12 @@ export default function GamesList({ navigation }) {
 
   return (
     <View style={styles.mainWrapper}>
-      
-      {/* 1. Верхня частина (Пошук + Фільтри) */}
       <View style={styles.topSection}>
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Пошук гри..."
-            placeholderTextColor="#8f98a0"
+            placeholder="Пошук ігор..."
+            placeholderTextColor={COLORS.textMuted}
             value={searchText}
             onChangeText={setSearchText}
             onSubmitEditing={handleSearch}
@@ -70,35 +84,22 @@ export default function GamesList({ navigation }) {
         </View>
 
         <View style={styles.filtersContainer}>
-          <FilterButton 
-            title="🔥 Гарячі знижки" 
-            isActive={activeFilter === 'best'} 
-            onPress={() => handleCategoryPress('best')} 
-          />
-          <FilterButton 
-            title="💰 < $5" 
-            isActive={activeFilter === 'cheap'} 
-            onPress={() => handleCategoryPress('cheap')} 
-          />
+          <FilterButton title="🔥 Гарячі знижки" isActive={activeFilter === 'best'} onPress={() => handleCategoryPress('best')} />
+          <FilterButton title="💰 < $5" isActive={activeFilter === 'cheap'} onPress={() => handleCategoryPress('cheap')} />
         </View>
       </View>
 
-      {/* 2. Контейнер для списку */}
-      {/* position: relative важливо, щоб абсолютний скрол знав межі */}
       <View style={styles.listContainerRelative}>
         {loading ? (
-          <ActivityIndicator size="large" color="#66c0f4" style={{ marginTop: 50 }} />
+          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+        ) : games.length === 0 ? (
+          <Text style={{color: COLORS.textMuted, textAlign: 'center', marginTop: 50}}>Ігор не знайдено 😔</Text>
         ) : (
           <FlatList
             data={games}
-            keyExtractor={(item) => item.dealID}
+            keyExtractor={(item, index) => item.dealID || item.gameID || index.toString()}
             contentContainerStyle={{ padding: 10, paddingBottom: 20 }}
-            
-            // !!! ЗАЛІЗНИЙ МЕТОД !!!
-            // Ми відриваємо список від потоку і кажемо:
-            // "Приклейся до всіх країв батьківського контейнера"
             style={styles.absoluteList}
-            
             renderItem={({ item }) => <GameCard item={item} navigation={navigation} />}
           />
         )}
@@ -109,15 +110,15 @@ export default function GamesList({ navigation }) {
 
 const GameCard = ({ item, navigation }) => {
     const hasDiscount = parseFloat(item.savings) > 0;
+    // МАГІЯ ТУТ: Беремо title, а якщо немає - беремо external
+    const gameTitle = item.title || item.external || 'Невідома назва';
+
     return (
-        <TouchableOpacity 
-            activeOpacity={0.7} 
-            onPress={() => navigation.navigate('Details', { game: item })}
-        >
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('Details', { game: item })}>
             <View style={styles.card}>
                 <Image source={{ uri: item.thumb }} style={styles.thumb} resizeMode="cover" />
                 <View style={styles.info}>
-                    <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+                    <Text style={styles.title} numberOfLines={2}>{gameTitle}</Text>
                 </View>
                 <View style={styles.priceBlock}>
                     {hasDiscount && (
@@ -138,70 +139,33 @@ const GameCard = ({ item, navigation }) => {
 };
 
 const FilterButton = ({ title, isActive, onPress }) => (
-  <TouchableOpacity 
-    style={[styles.filterBtn, isActive && styles.filterBtnActive]} 
-    onPress={onPress}
-  >
+  <TouchableOpacity style={[styles.filterBtn, isActive && styles.filterBtnActive]} onPress={onPress}>
     <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{title}</Text>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  mainWrapper: {
-    flex: 1, // Займає все місце в HomeScreen
-    width: '100%',
-    backgroundColor: '#1b2838',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  topSection: {
-    flexShrink: 0, // Завжди своєї висоти, не стискається
-    zIndex: 2,
-    backgroundColor: '#1b2838',
-  },
-  
-  // Контейнер, який займає все, що лишилося
-  listContainerRelative: {
-    flex: 1, 
-    width: '100%',
-    position: 'relative', // Це база для абсолютного позиціонування
-    backgroundColor: '#1b2838',
-  },
-
-  // !!! ГОЛОВНЕ ВИПРАВЛЕННЯ !!!
-  absoluteList: {
-    position: 'absolute', // Вириваємо з потоку
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0, // Розтягуємо до самого низу батька
-    // Специфічно для вебу вмикаємо скрол
-    ...Platform.select({
-      web: {
-        overflowY: 'auto',
-        height: '100%',
-      }
-    })
-  },
-
-  // Стилі компонентів
-  searchContainer: { flexDirection: 'row', padding: 10, backgroundColor: '#171a21' },
-  input: { flex: 1, backgroundColor: '#2a475e', color: '#c7d5e0', padding: 10, borderRadius: 5, marginRight: 10, ...Platform.select({ web: { outlineStyle: 'none' } }) },
-  searchButton: { backgroundColor: '#66c0f4', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 15, borderRadius: 5, ...Platform.select({ web: { cursor: 'pointer' } }) },
+  mainWrapper: { flex: 1, width: '100%', backgroundColor: COLORS.background, display: 'flex', flexDirection: 'column' },
+  topSection: { flexShrink: 0, zIndex: 2, backgroundColor: COLORS.background },
+  listContainerRelative: { flex: 1, width: '100%', position: 'relative', backgroundColor: COLORS.background },
+  absoluteList: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, ...Platform.select({ web: { overflowY: 'auto', height: '100%' } }) },
+  searchContainer: { flexDirection: 'row', padding: 10, backgroundColor: COLORS.surfaceDark },
+  input: { flex: 1, backgroundColor: COLORS.surface, color: COLORS.textSecondary, padding: 10, borderRadius: 5, marginRight: 10, ...Platform.select({ web: { outlineStyle: 'none' } }) },
+  searchButton: { backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 15, borderRadius: 5, ...Platform.select({ web: { cursor: 'pointer' } }) },
   searchButtonText: { fontSize: 18 },
-  filtersContainer: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2a475e' },
-  filterBtn: { paddingVertical: 6, paddingHorizontal: 15, borderRadius: 20, borderWidth: 1, borderColor: '#4b6b8b', ...Platform.select({ web: { cursor: 'pointer' } }) },
-  filterBtnActive: { backgroundColor: '#66c0f4', borderColor: '#66c0f4' },
-  filterText: { color: '#8f98a0', fontWeight: 'bold' },
-  filterTextActive: { color: '#fff' },
-  card: { flexDirection: 'row', backgroundColor: '#16202d', marginBottom: 8, height: 70, alignItems: 'center', paddingRight: 10, borderRadius: 4, overflow: 'hidden', ...Platform.select({ web: { cursor: 'pointer' } }) },
+  filtersContainer: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.surface },
+  filterBtn: { paddingVertical: 6, paddingHorizontal: 15, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, ...Platform.select({ web: { cursor: 'pointer' } }) },
+  filterBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterText: { color: COLORS.textMuted, fontWeight: 'bold' },
+  filterTextActive: { color: COLORS.surfaceDark }, 
+  card: { flexDirection: 'row', backgroundColor: COLORS.surfaceDark, marginBottom: 8, height: 70, alignItems: 'center', paddingRight: 10, borderRadius: 4, overflow: 'hidden', ...Platform.select({ web: { cursor: 'pointer' } }) },
   thumb: { width: 120, height: '100%' },
   info: { flex: 1, paddingHorizontal: 10, justifyContent: 'center' },
-  title: { color: '#c7d5e0', fontSize: 13, fontWeight: 'bold' },
+  title: { color: COLORS.textSecondary, fontSize: 13, fontWeight: 'bold' },
   priceBlock: { flexDirection: 'row', alignItems: 'center' },
-  discountBadge: { backgroundColor: '#4c6b22', paddingVertical: 2, paddingHorizontal: 6, marginRight: 8 },
-  discountText: { color: '#a4d007', fontWeight: 'bold', fontSize: 14 },
+  discountBadge: { backgroundColor: COLORS.primary, paddingVertical: 2, paddingHorizontal: 6, marginRight: 8, borderRadius: 4 },
+  discountText: { color: COLORS.surfaceDark, fontWeight: 'bold', fontSize: 14 },
   priceColumn: { alignItems: 'flex-end' },
-  oldPrice: { color: '#626366', fontSize: 11, textDecorationLine: 'line-through' },
-  newPrice: { color: '#c7d5e0', fontSize: 14 }
+  oldPrice: { color: COLORS.textMuted, fontSize: 11, textDecorationLine: 'line-through' },
+  newPrice: { color: COLORS.textSecondary, fontSize: 14, fontWeight: 'bold' }
 });
