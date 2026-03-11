@@ -14,7 +14,12 @@ export default function DetailsScreen({ route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false); 
 
-  const [highResImage, setHighResImage] = useState(game.thumb);
+  // Беремо HD-банер прямо з серверів Steam
+  const directSteamImage = game.steamAppID 
+    ? `https://cdn.akamai.steamstatic.com/steam/apps/${game.steamAppID}/header.jpg`
+    : game.thumb;
+
+  const [highResImage, setHighResImage] = useState(directSteamImage);
   const [isSteamLoading, setIsSteamLoading] = useState(true);
 
   const cheapSharkSavings = parseFloat(game.savings);
@@ -36,56 +41,42 @@ export default function DetailsScreen({ route }) {
     }
 
     try {
-      // Підстраховка: якщо регіон не визначився і стоїть US, примусово ставимо UA для гривень
+      // Гарантуємо, що запит іде для України (або твоєї локації), додаємо антикеш
       const safeCountryCode = (countryCode === 'US' || !countryCode) ? 'UA' : countryCode;
       const cacheBuster = new Date().getTime();
-      const targetUrl = `https://store.steampowered.com/api/appdetails?appids=${game.steamAppID}&cc=${safeCountryCode}&l=ukrainian&t=${cacheBuster}`;
+      const targetUrl = `https://store.steampowered.com/api/appdetails?appids=${game.steamAppID}&cc=${safeCountryCode}&l=ukrainian&v=${cacheBuster}`;
       
+      // 🔥 Використовуємо CodeTabs Proxy — він стабільніший за AllOrigins для Steam
+      const fetchUrl = Platform.OS === 'web' 
+        ? `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(targetUrl)}`
+        : targetUrl;
+
+      const res = await fetch(fetchUrl);
+      
+      // БРОНЕБІЙНИЙ ПАРСИНГ: Читаємо як текст, щоб не впасти, якщо Steam видасть HTML-помилку
+      const textResponse = await res.text();
       let data = null;
-
-      if (Platform.OS === 'web') {
-        // Використовуємо надійний /get
-        const fetchUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-        const res = await fetch(fetchUrl);
-        const allOriginsData = await res.json();
-
-        // БРОНЕБІЙНИЙ ЗАХИСТ: перевіряємо, чи Steam не повернув помилку замість даних
-        if (allOriginsData && allOriginsData.contents) {
-          try {
-            data = JSON.parse(allOriginsData.contents);
-          } catch (parseError) {
-            console.warn("Steam повернув не JSON (можливо, блокування). Залишаємо базові ціни.");
-            setIsSteamLoading(false);
-            return; 
-          }
-        } else {
-          setIsSteamLoading(false);
-          return;
-        }
-      } else {
-        // Для телефона запит прямий
-        const res = await fetch(targetUrl);
-        data = await res.json();
-      }
-
-      if (!data) {
+      
+      try {
+        data = JSON.parse(textResponse);
+      } catch (parseError) {
+        console.warn("Steam відмовив у доступі (Rate Limit). Залишаємо базові ціни CheapShark.");
         setIsSteamLoading(false);
         return;
       }
 
-      const steamData = data[game.steamAppID];
+      const steamData = data && data[game.steamAppID];
 
+      // Якщо Steam успішно відповів чистими даними
       if (steamData && steamData.success && steamData.data) {
-        if (steamData.data.header_image) {
-            setHighResImage(steamData.data.header_image);
-        }
-
         if (steamData.data.is_free) {
           setDisplayNewPrice("Безкоштовно");
           setDisplayOldPrice(null);
           setDisplayDiscount(0);
         } else if (steamData.data.price_overview) {
           const overview = steamData.data.price_overview;
+          
+          // Отримуємо офіційну гривню від Steam!
           setDisplayNewPrice(overview.final_formatted);
           
           if (overview.discount_percent > 0) {
@@ -98,7 +89,7 @@ export default function DetailsScreen({ route }) {
         }
       }
     } catch (error) {
-      console.error("Помилка підключення до Steam:", error);
+      console.error("Мережева помилка під час запиту до Steam:", error);
     } finally {
       setIsSteamLoading(false); 
     }
@@ -148,7 +139,7 @@ export default function DetailsScreen({ route }) {
           <Image source={{ uri: highResImage }} style={styles.image} />
           
           <Text style={styles.title}>{gameTitle}</Text>
-          <Text style={styles.regionText}>📍 Регіон: {countryName}</Text>
+          <Text style={styles.regionText}>📍 Регіон: {countryName === 'США' ? 'Ukraine' : countryName}</Text>
 
           <View style={styles.priceContainer}>
             {isSteamLoading ? (

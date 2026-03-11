@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleSheet } from 'react-native';
 
 import { UserProvider } from './context/UserContext';
-import { COLORS } from './theme/colors'; // <-- ПІДКЛЮЧИЛИ НАШУ ГЛОБАЛЬНУ ТЕМУ
+import { COLORS } from './theme/colors'; 
 
 // Імпорти екранів
 import SubsScreen from './screens/SubsScreen';
@@ -16,10 +16,9 @@ import ProfileScreen from './screens/ProfileScreen';
 import UsersScreen from './screens/UsersScreen';
 import SupportScreen from './screens/SupportScreen';
 import GalleryScreen from './screens/GalleryScreen'; 
-
-// ---> ДОДАЛИ ІМПОРТИ НОВИХ ЕКРАНІВ З ЛАБИ 11 <---
 import MapScreen from './screens/MapScreen';
 import SensorScreen from './screens/SensorScreen';
+import FirebaseScreen from './screens/FirebaseScreen'; // 🔥 ДОДАЛИ НАШ ХМАРНИЙ ЕКРАН
 
 const Stack = createStackNavigator();
 
@@ -33,8 +32,9 @@ const linking = {
       Users: 'community',
       Support: 'support',
       Gallery: 'gallery',
-      Map: 'map',       // Лінк для карти
-      Sensors: 'sensors' // Лінк для сенсорів
+      Map: 'map',
+      Sensors: 'sensors',
+      Firebase: 'wishlist' // 🔥 Додали лінк для вебу
     },
   },
 };
@@ -44,70 +44,42 @@ export default function App() {
     <UserProvider>
       <SafeAreaProvider style={styles.appContainer}>
         <NavigationContainer linking={linking}>
+          
           <StatusBar style="light" />
+          
           <Stack.Navigator
             initialRouteName="Home"
-            screenOptions={{ headerShown: false }}
+            screenOptions={{ 
+              headerStyle: { 
+                backgroundColor: COLORS.surfaceDark, 
+                elevation: 0, 
+                shadowOpacity: 0, 
+                borderBottomWidth: 2, 
+                borderBottomColor: COLORS.border 
+              },
+              headerTintColor: COLORS.textPrimary, 
+              headerTitleStyle: { fontWeight: 'bold', letterSpacing: 1 },
+              headerBackTitleVisible: false, 
+              headerBackImage: () => (
+                <Ionicons name="arrow-back" size={28} color={COLORS.primary} style={{ marginLeft: 15 }} />
+              ),
+            }}
           >
-            <Stack.Screen name="Home" component={HomeScreen} />
+            {/* Екрани БЕЗ стандартної шапки */}
+            <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Gallery" component={GalleryScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Map" component={MapScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Sensors" component={SensorScreen} options={{ headerShown: false }} />
             
-            <Stack.Screen
-              name="Details"
-              component={DetailsScreen}
-              options={{
-                headerShown: true,
-                title: 'Деталі гри',
-                // Використовуємо глобальні кольори!
-                headerStyle: { backgroundColor: COLORS.surfaceDark, elevation: 0, borderBottomWidth: 0 },
-                headerTintColor: COLORS.textSecondary,
-                headerBackTitleVisible: false,
-                headerTitleStyle: { fontWeight: 'bold' },
-                headerBackImage: () => <Ionicons name="arrow-back" size={32} color={COLORS.textSecondary} style={{ marginLeft: 10 }} />,
-              }}
-            />
-
-            <Stack.Screen 
-              name="Subs" 
-              component={SubsScreen} 
-              options={{ headerShown: true, title: 'Мої підписки', headerStyle: { backgroundColor: COLORS.surfaceDark }, headerTintColor: COLORS.textSecondary, headerBackImage: () => <Ionicons name="arrow-back" size={32} color={COLORS.textSecondary} style={{ marginLeft: 10 }} /> }}
-            />
-
-            <Stack.Screen 
-              name="Profile" 
-              component={ProfileScreen} 
-              options={{ headerShown: false, title: 'Мій профіль', headerStyle: { backgroundColor: COLORS.surfaceDark }, headerTintColor: COLORS.textSecondary, headerBackImage: () => <Ionicons name="arrow-back" size={32} color={COLORS.textSecondary} style={{ marginLeft: 10 }} /> }}
-            />
-
-            <Stack.Screen 
-              name="Users" 
-              component={UsersScreen} 
-              options={{ headerShown: true, title: 'Спільнота', headerStyle: { backgroundColor: COLORS.surfaceDark }, headerTintColor: COLORS.textSecondary, headerBackImage: () => <Ionicons name="arrow-back" size={32} color={COLORS.textSecondary} style={{ marginLeft: 10 }} /> }}
-            />
-
-            <Stack.Screen 
-              name="Support" 
-              component={SupportScreen} 
-              options={{ headerShown: true, title: 'Підтримка', headerStyle: { backgroundColor: COLORS.surfaceDark }, headerTintColor: COLORS.textSecondary, headerBackImage: () => <Ionicons name="arrow-back" size={32} color={COLORS.textSecondary} style={{ marginLeft: 10 }} /> }}
-            />
-
-            <Stack.Screen 
-              name="Gallery" 
-              component={GalleryScreen} 
-              options={{ headerShown: false }} 
-            />
-
-            {/* ---> НАШІ НОВІ ЕКРАНИ (Карта і Сенсори) <--- */}
-            <Stack.Screen 
-              name="Map" 
-              component={MapScreen} 
-              options={{ headerShown: false }} 
-            />
+            {/* Екрани ЗІ стандартною шапкою */}
+            <Stack.Screen name="Details" component={DetailsScreen} options={{ title: 'Деталі гри' }} />
+            <Stack.Screen name="Subs" component={SubsScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Users" component={UsersScreen} options={{ title: 'Спільнота' }} />
+            <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Підтримка' }} />
             
-            <Stack.Screen 
-              name="Sensors" 
-              component={SensorScreen} 
-              options={{ headerShown: false }} 
-            />
+            {/* 🔥 НАШ НОВИЙ ЕКРАН БАЗИ ДАНИХ */}
+            <Stack.Screen name="Firebase" component={FirebaseScreen} options={{ headerShown: false }} />
 
           </Stack.Navigator>
         </NavigationContainer>
@@ -119,7 +91,7 @@ export default function App() {
 const styles = StyleSheet.create({
   appContainer: {
     flex: 1,
-    backgroundColor: COLORS.background, // Фон беремо з теми
+    backgroundColor: COLORS.background,
     ...Platform.select({
       web: {
         height: '100vh',

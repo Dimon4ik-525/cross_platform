@@ -15,11 +15,9 @@ export default function GamesList({ navigation }) {
   const fetchGames = (filter, query = '') => {
     setLoading(true);
     
-    // Використовуємо ТІЛЬКИ /deals для всього! Він віддає правильні ціни та знижки.
     let url = `https://www.cheapshark.com/api/1.0/deals?storeID=1&pageSize=30`;
 
     if (query) {
-      // Додаємо пошуковий запит
       url += `&title=${encodeURIComponent(query)}`;
     } else {
       if (filter === 'best') url += '&sortBy=Savings&onSale=1';
@@ -31,7 +29,6 @@ export default function GamesList({ navigation }) {
       .then((data) => {
         let finalData = data;
 
-        // Для категорій залишаємо лише ті, де дійсно є знижка
         if (!query) {
           finalData = data.filter(game => {
             const oldP = parseFloat(game.normalPrice || 0);
@@ -98,8 +95,9 @@ export default function GamesList({ navigation }) {
           <FlatList
             data={games}
             keyExtractor={(item, index) => item.dealID || item.gameID || index.toString()}
-            contentContainerStyle={{ padding: 10, paddingBottom: 20 }}
+            contentContainerStyle={{ padding: 15, paddingBottom: 20 }}
             style={styles.absoluteList}
+            showsVerticalScrollIndicator={false}
             renderItem={({ item }) => <GameCard item={item} navigation={navigation} />}
           />
         )}
@@ -110,7 +108,6 @@ export default function GamesList({ navigation }) {
 
 const GameCard = ({ item, navigation }) => {
     const hasDiscount = parseFloat(item.savings) > 0;
-    // МАГІЯ ТУТ: Беремо title, а якщо немає - беремо external
     const gameTitle = item.title || item.external || 'Невідома назва';
 
     return (
@@ -130,7 +127,8 @@ const GameCard = ({ item, navigation }) => {
                     {hasDiscount && (
                         <Text style={styles.oldPrice}>${item.normalPrice}</Text>
                     )}
-                    <Text style={styles.newPrice}>${item.salePrice}</Text>
+                    {/* Зробили ціну фірмовим зеленим */}
+                    <Text style={styles.newPrice}>${item.salePrice}</Text> 
                     </View>
                 </View>
             </View>
@@ -149,23 +147,31 @@ const styles = StyleSheet.create({
   topSection: { flexShrink: 0, zIndex: 2, backgroundColor: COLORS.background },
   listContainerRelative: { flex: 1, width: '100%', position: 'relative', backgroundColor: COLORS.background },
   absoluteList: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, ...Platform.select({ web: { overflowY: 'auto', height: '100%' } }) },
-  searchContainer: { flexDirection: 'row', padding: 10, backgroundColor: COLORS.surfaceDark },
-  input: { flex: 1, backgroundColor: COLORS.surface, color: COLORS.textSecondary, padding: 10, borderRadius: 5, marginRight: 10, ...Platform.select({ web: { outlineStyle: 'none' } }) },
-  searchButton: { backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 15, borderRadius: 5, ...Platform.select({ web: { cursor: 'pointer' } }) },
+  
+  searchContainer: { flexDirection: 'row', padding: 15, backgroundColor: COLORS.surfaceDark },
+  input: { flex: 1, backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 12, borderRadius: 5, marginRight: 10, borderWidth: 1, borderColor: COLORS.border, ...Platform.select({ web: { outlineStyle: 'none' } }) },
+  searchButton: { backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, borderRadius: 5, ...Platform.select({ web: { cursor: 'pointer' } }) },
   searchButtonText: { fontSize: 18 },
-  filtersContainer: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.surface },
-  filterBtn: { paddingVertical: 6, paddingHorizontal: 15, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, ...Platform.select({ web: { cursor: 'pointer' } }) },
+  
+  filtersContainer: { flexDirection: 'row', justifyContent: 'center', gap: 15, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  filterBtn: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, ...Platform.select({ web: { cursor: 'pointer' } }) },
   filterBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   filterText: { color: COLORS.textMuted, fontWeight: 'bold' },
   filterTextActive: { color: COLORS.surfaceDark }, 
-  card: { flexDirection: 'row', backgroundColor: COLORS.surfaceDark, marginBottom: 8, height: 70, alignItems: 'center', paddingRight: 10, borderRadius: 4, overflow: 'hidden', ...Platform.select({ web: { cursor: 'pointer' } }) },
+  
+  card: { 
+    flexDirection: 'row', backgroundColor: COLORS.surfaceDark, marginBottom: 12, height: 75, 
+    alignItems: 'center', paddingRight: 12, borderRadius: 8, overflow: 'hidden',
+    borderWidth: 1, borderColor: COLORS.surface, // Додали рамку карткам
+    ...Platform.select({ web: { cursor: 'pointer' } }) 
+  },
   thumb: { width: 120, height: '100%' },
-  info: { flex: 1, paddingHorizontal: 10, justifyContent: 'center' },
-  title: { color: COLORS.textSecondary, fontSize: 13, fontWeight: 'bold' },
+  info: { flex: 1, paddingHorizontal: 12, justifyContent: 'center' },
+  title: { color: COLORS.textPrimary, fontSize: 15, fontWeight: 'bold' }, // Зробили текст білим замість сірого
   priceBlock: { flexDirection: 'row', alignItems: 'center' },
-  discountBadge: { backgroundColor: COLORS.primary, paddingVertical: 2, paddingHorizontal: 6, marginRight: 8, borderRadius: 4 },
+  discountBadge: { backgroundColor: COLORS.primary, paddingVertical: 3, paddingHorizontal: 6, marginRight: 8, borderRadius: 4 },
   discountText: { color: COLORS.surfaceDark, fontWeight: 'bold', fontSize: 14 },
   priceColumn: { alignItems: 'flex-end' },
   oldPrice: { color: COLORS.textMuted, fontSize: 11, textDecorationLine: 'line-through' },
-  newPrice: { color: COLORS.textSecondary, fontSize: 14, fontWeight: 'bold' }
+  newPrice: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' } // Неонова ціна!
 });

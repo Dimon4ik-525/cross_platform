@@ -3,6 +3,7 @@ import { Text, StyleSheet, TouchableOpacity, View, Platform } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../theme/colors'; // 🔥 ПІДКЛЮЧИЛИ НАШУ ДИЗАЙН-СИСТЕМУ
 
 export default function Header() {
   const navigation = useNavigation();
@@ -18,18 +19,20 @@ export default function Header() {
           style={styles.profileButton}
           onPress={() => navigation.navigate('Profile')}
         >
-          <Ionicons name="person-circle" size={28} color="#66c0f4" />
+          {/* Іконка тепер бере колір з теми */}
+          <Ionicons name="person-circle" size={28} color={COLORS.primary} />
         </TouchableOpacity>
 
+        {/* НОВА НАЗВА ПРОЄКТУ */}
         <Text style={styles.logoText}>
-          STEAM<Text style={styles.logoHighlight}>DEALS</Text>
+          VOR<Text style={styles.logoHighlight}>TEX</Text>
         </Text>
 
         <TouchableOpacity 
           style={styles.bellButton}
           onPress={() => navigation.navigate('Subs')} 
         >
-          <Ionicons name="notifications" size={24} color="#66c0f4" />
+          <Ionicons name="notifications" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -38,28 +41,27 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   safeContainer: {
-    backgroundColor: '#171a21',
+    backgroundColor: COLORS.surfaceDark, // Темний фон шапки
     borderBottomWidth: 2,
-    borderBottomColor: '#2a475e',
+    borderBottomColor: COLORS.border,    // Зеленувата обводка
     width: '100%',
     
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
+        shadowColor: COLORS.primary, // Неонова тінь на iOS
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
         shadowRadius: 4.65,
       },
       android: {
         elevation: 8,
       },
       web: {
-        // !!! ГОЛОВНА ЗМІНА !!!
-        // position: 'sticky' змушує хедер "липнути" до верху браузера при скролі
         position: 'sticky', 
         top: 0, 
-        zIndex: 1000, // Гарантує, що хедер буде поверх списку ігор
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)', 
+        zIndex: 1000, 
+        // 🔥 Неонове свічення у вебі замість нудної чорної тіні
+        boxShadow: `0px 4px 15px ${COLORS.primary}33`, 
       }
     }),
   },
@@ -71,8 +73,21 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     position: 'relative', 
   },
-  logoText: { fontSize: 24, fontWeight: 'bold', color: '#c7d5e0', letterSpacing: 2 },
-  logoHighlight: { color: '#66c0f4' },
-  bellButton: { position: 'absolute', right: 20, bottom: 15 },
-  profileButton: { position: 'absolute', left: 20, bottom: 12 }
+  logoText: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: COLORS.textPrimary, // Білий текст
+    letterSpacing: 3 // Трохи розширили для футуристичності
+  },
+  logoHighlight: { 
+    color: COLORS.primary // Неоново-зелений акцент
+  },
+  bellButton: { 
+    position: 'absolute', right: 20, bottom: 15,
+    ...Platform.select({ web: { cursor: 'pointer' } })
+  },
+  profileButton: { 
+    position: 'absolute', left: 20, bottom: 12,
+    ...Platform.select({ web: { cursor: 'pointer' } })
+  }
 });

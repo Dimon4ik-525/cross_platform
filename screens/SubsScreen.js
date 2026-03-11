@@ -1,13 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Platform } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native'; 
+import { useFocusEffect, useNavigation } from '@react-navigation/native'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { COLORS } from '../theme/colors'; // Наші фірмові кольори
 
-export default function SubsScreen({ navigation }) {
+export default function SubsScreen() {
   const [subs, setSubs] = useState([]);
+  const navigation = useNavigation();
 
   useFocusEffect(
     useCallback(() => {
@@ -25,51 +28,51 @@ export default function SubsScreen({ navigation }) {
     }
   };
 
-  // Функція для переходу на головну
-  const goHome = () => navigation.navigate('Home');
-
   return (
     <View style={styles.container}>
       <Header />
       
+      {/* ПАНЕЛЬ НАВІГАЦІЇ (Як у FirebaseScreen) */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Text style={styles.backText}>НАЗАД</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>МОЇ ПІДПИСКИ</Text>
+        <View style={{ width: 60 }} /> 
+      </View>
+
       <View style={styles.content}>
         {subs.length === 0 ? (
-          // --- ВАРІАНТ 1: СПИСОК ПОРОЖНІЙ ---
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>📭</Text>
             <Text style={styles.emptyText}>У вас поки немає підписок</Text>
-            <Text style={styles.subText}>Додайте ігри, щоб слідкувати за цінами</Text>
-            
-            {/* Кнопка заклику до дії */}
-            <TouchableOpacity style={styles.actionButton} onPress={goHome}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Home')}>
               <Text style={styles.actionButtonText}>🔍 ЗНАЙТИ ІГРИ</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          // --- ВАРІАНТ 2: Є ІГРИ ---
           <FlatList
             data={subs}
             keyExtractor={(item) => item.dealID}
-            contentContainerStyle={{ padding: 10, paddingBottom: 20 }}
+            contentContainerStyle={{ padding: 15, paddingBottom: 30 }}
             renderItem={({ item }) => (
               <TouchableOpacity 
-                activeOpacity={0.7}
+                activeOpacity={0.8}
                 onPress={() => navigation.navigate('Details', { game: item })}
+                style={styles.card}
               >
-                <View style={styles.card}>
-                  <Image source={{ uri: item.thumb }} style={styles.thumb} />
-                  <View style={styles.info}>
-                    <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-                    <Text style={styles.price}>${item.salePrice}</Text>
-                  </View>
-                  <Text style={styles.arrow}>›</Text>
+                <Image source={{ uri: item.thumb }} style={styles.thumb} />
+                <View style={styles.info}>
+                  <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.price}>${item.salePrice}</Text>
                 </View>
+                <Ionicons name="chevron-forward" size={20} color={COLORS.border} />
               </TouchableOpacity>
             )}
-            // --- КНОПКА В НИЗУ СПИСКУ ---
             ListFooterComponent={
-              <TouchableOpacity style={styles.backButton} onPress={goHome}>
-                <Text style={styles.backButtonText}>← НА ГОЛОВНУ</Text>
+              <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('Home')}>
+                <Text style={styles.homeBtnText}>← ПОВЕРНУТИСЬ ДО ПОШУКУ</Text>
               </TouchableOpacity>
             }
           />
@@ -82,56 +85,49 @@ export default function SubsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1b2838', justifyContent: 'space-between' },
-  content: { flex: 1, width: '100%' },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { flex: 1 },
   
-  // Стилі для порожнього стану
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  emptyEmoji: { fontSize: 50, marginBottom: 20 },
-  emptyText: { color: '#c7d5e0', fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
-  subText: { color: '#8f98a0', fontSize: 14, marginBottom: 30, textAlign: 'center' },
-
-  // Кнопка "Знайти ігри" (Велика синя)
-  actionButton: {
-    backgroundColor: '#66c0f4',
+  // Кастомна шапка всередині екрану
+  navBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 15, 
     paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    elevation: 3,
-    ...Platform.select({ web: { cursor: 'pointer' } }),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surfaceDark
   },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  backBtn: { flexDirection: 'row', alignItems: 'center' },
+  backText: { color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
+  headerTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
 
-  // Кнопка "На головну" (Прозора з рамкою)
-  backButton: {
-    marginTop: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#4b6b8b',
-    alignItems: 'center',
-    marginHorizontal: 20, // Відступи збоку
-    ...Platform.select({ web: { cursor: 'pointer' } }),
-  },
-  backButtonText: {
-    color: '#8f98a0',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-
-  // Картка гри
+  // Картки ігор
   card: {
-    flexDirection: 'row', backgroundColor: '#16202d', marginBottom: 10,
-    height: 80, alignItems: 'center', paddingRight: 15, borderRadius: 5,
+    flexDirection: 'row', 
+    backgroundColor: COLORS.surfaceDark, 
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.surface,
+    padding: 10,
+    alignItems: 'center',
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
-  thumb: { width: 100, height: '100%', resizeMode: 'cover', borderTopLeftRadius: 5, borderBottomLeftRadius: 5 },
-  info: { flex: 1, paddingHorizontal: 15, justifyContent: 'center' },
-  title: { color: '#c7d5e0', fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
-  price: { color: '#66c0f4', fontSize: 18, fontWeight: 'bold' },
-  arrow: { color: '#4b6b8b', fontSize: 24, fontWeight: 'bold' }
+  thumb: { width: 80, height: 45, borderRadius: 4, marginRight: 15 },
+  info: { flex: 1 },
+  title: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
+  price: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' },
+
+  // Порожній стан
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyEmoji: { fontSize: 60, marginBottom: 20 },
+  emptyText: { color: COLORS.textSecondary, fontSize: 18, textAlign: 'center', marginBottom: 25 },
+  actionButton: { backgroundColor: COLORS.primary, paddingVertical: 12, paddingHorizontal: 30, borderRadius: 5 },
+  actionButtonText: { color: COLORS.surfaceDark, fontWeight: 'bold' },
+
+  // Кнопка внизу
+  homeBtn: { marginTop: 20, paddingVertical: 15, alignItems: 'center', borderTopWidth: 1, borderTopColor: COLORS.border },
+  homeBtnText: { color: COLORS.textMuted, fontWeight: 'bold', fontSize: 13 }
 });
