@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons'; // 🔥 Додали іконки
 import { UserContext } from '../context/UserContext'; 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -54,8 +55,19 @@ export default function SupportScreen({ navigation }) {
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
       <Header />
       
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>СЛУЖБА ПІДТРИМКИ 🛠️</Text>
+      {/* 🔥 ФІРМОВА ПАНЕЛЬ НАВІГАЦІЇ VORTEX */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Text style={styles.backText} numberOfLines={1}>НАЗАД</Text>
+        </TouchableOpacity>
+        
+        <Text style={styles.screenTitleText}>ПІДТРИМКА</Text>
+        
+        <View style={styles.spacer} /> 
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>Заповніть форму зворотного зв'язку</Text>
 
         <View style={styles.inputGroup}>
@@ -109,9 +121,25 @@ export default function SupportScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  
+  /* 🔥 СТИЛІ НАВІГАЦІЇ VORTEX */
+  navBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 15, 
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surfaceDark
+  },
+  backBtn: { flexDirection: 'row', alignItems: 'center', width: 100 },
+  spacer: { width: 100 }, 
+  backText: { color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
+  screenTitleText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
+
   content: { flexGrow: 1, padding: 20 },
-  title: { fontSize: 24, color: COLORS.textPrimary, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 },
-  subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 25 },
+  subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 25, marginTop: 10 },
   
   inputGroup: { marginBottom: 15 },
   label: { color: COLORS.textPrimary, fontSize: 16, marginBottom: 5, fontWeight: 'bold' },

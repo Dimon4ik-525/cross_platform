@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { COLORS } from '../theme/colors';
@@ -8,6 +11,7 @@ export default function UsersScreen() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigation = useNavigation(); // 🔥 Додали навігацію
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -41,10 +45,20 @@ export default function UsersScreen() {
   return (
     <View style={styles.container}>
       <Header />
+
+      {/* 🔥 ФІРМОВА ПАНЕЛЬ НАВІГАЦІЇ VORTEX */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Text style={styles.backText} numberOfLines={1}>НАЗАД</Text>
+        </TouchableOpacity>
+        
+        <Text style={styles.screenTitleText}>СПІЛЬНОТА</Text>
+        
+        <View style={styles.spacer} /> 
+      </View>
       
       <View style={styles.content}>
-        <Text style={styles.headerTitle}>СПІЛЬНОТА VORTEX</Text>
-
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={COLORS.primary} />
@@ -72,11 +86,26 @@ export default function UsersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, justifyContent: 'space-between' },
+  
+  /* 🔥 СТИЛІ НАВІГАЦІЇ VORTEX */
+  navBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 15, 
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surfaceDark
+  },
+  backBtn: { flexDirection: 'row', alignItems: 'center', width: 100 },
+  spacer: { width: 100 }, 
+  backText: { color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
+  screenTitleText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
+
   content: { flex: 1, width: '100%' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   
-  headerTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginVertical: 15, letterSpacing: 1 },
-
   card: {
     flexDirection: 'row', backgroundColor: COLORS.surfaceDark, marginBottom: 12,
     padding: 15, borderRadius: 10, alignItems: 'center',

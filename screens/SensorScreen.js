@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Switch } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Switch, Platform } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+
 import Header from '../components/Header';
-import { COLORS } from '../theme/colors'; // <-- ПІДКЛЮЧИЛИ ТЕМУ
+import Footer from '../components/Footer';
+import { COLORS } from '../theme/colors';
 
 export default function SensorScreen({ navigation }) {
   const [{ x, y, z }, setData] = useState({ x: 0, y: 0, z: 0 });
@@ -32,24 +36,34 @@ export default function SensorScreen({ navigation }) {
   const moveX = x * 100; 
   const moveY = y * -100;
 
-  // Використовуємо кольори з теми для індикації нахилу
   const isCritical = Math.abs(x) > 0.5 || Math.abs(y) > 0.5;
   const badgeColor = isCritical ? COLORS.danger : COLORS.success; 
 
   return (
     <View style={styles.container}>
       <Header />
+
+      {/* 🔥 ФІРМОВА ПАНЕЛЬ НАВІГАЦІЇ VORTEX */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Text style={styles.backText} numberOfLines={1}>НАЗАД</Text>
+        </TouchableOpacity>
+        
+        <Text style={styles.screenTitleText}>ТЕСТ ГЕЙМПАДА</Text>
+        
+        <View style={styles.spacer} /> 
+      </View>
+
       <View style={styles.content}>
         
-        <Text style={styles.title}>📱 Тест Гіроскопа</Text>
-        <Text style={styles.desc}>Нахиляйте пристрій, щоб керувати знижкою!</Text>
+        <Text style={styles.desc}>Нахиляйте пристрій по осях X та Y, щоб керувати сенсором!</Text>
 
         <View style={styles.switchContainer}>
           <Text style={styles.switchLabel}>
             {isSensorActive ? '🟢 Сенсор УВІМКНЕНО' : '🔴 Сенсор ВИМКНЕНО'}
           </Text>
           <Switch
-            // Використовуємо кольори з теми для перемикача
             trackColor={{ false: COLORS.surfaceDark, true: COLORS.primary }}
             thumbColor={isSensorActive ? COLORS.textPrimary : COLORS.textMuted}
             onValueChange={() => setIsSensorActive(!isSensorActive)}
@@ -65,7 +79,9 @@ export default function SensorScreen({ navigation }) {
                 transform: [{ translateX: moveX }, { translateY: moveY }] 
               }
             ]}>
-            <Text style={[styles.objectText, { color: isSensorActive ? COLORS.surfaceDark : COLORS.textMuted }]}>-</Text>
+            <Text style={[styles.objectText, { color: isSensorActive ? COLORS.surfaceDark : COLORS.textMuted }]}>
+              {isSensorActive ? '🎮' : '-'}
+            </Text>
           </View>
         </View>
 
@@ -74,31 +90,42 @@ export default function SensorScreen({ navigation }) {
           <Text style={styles.dataText}>Вісь Y (Верх/Низ): {y.toFixed(2)}</Text>
         </View>
 
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>← Повернутися назад</Text>
-        </TouchableOpacity>
-
       </View>
+
+      <Footer />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  
+  /* 🔥 СТИЛІ НАВІГАЦІЇ VORTEX */
+  navBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 15, 
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surfaceDark
+  },
+  backBtn: { flexDirection: 'row', alignItems: 'center', width: 100, ...Platform.select({ web: { cursor: 'pointer' } }) },
+  spacer: { width: 100 }, 
+  backText: { color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
+  screenTitleText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
+
   content: { flex: 1, alignItems: 'center', padding: 20, paddingTop: 30 },
-  title: { fontSize: 24, fontWeight: 'bold', color: COLORS.primary, marginBottom: 5 },
   desc: { color: COLORS.textMuted, fontSize: 14, marginBottom: 20, textAlign: 'center' },
   
-  switchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginBottom: 20, width: '100%', justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.border },
-  switchLabel: { color: COLORS.textSecondary, fontSize: 16, fontWeight: 'bold' },
+  switchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceDark, paddingHorizontal: 20, paddingVertical: 15, borderRadius: 10, marginBottom: 30, width: '100%', justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.border },
+  switchLabel: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold' },
 
-  arena: { width: 250, height: 250, backgroundColor: COLORS.surfaceDark, borderRadius: 125, borderWidth: 2, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center', marginBottom: 30, overflow: 'hidden' },
-  movingObject: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  objectText: { fontWeight: 'bold', fontSize: 22 },
+  arena: { width: 250, height: 250, backgroundColor: COLORS.surfaceDark, borderRadius: 125, borderWidth: 2, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center', marginBottom: 40, overflow: 'hidden' },
+  movingObject: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', elevation: 5, borderWidth: 1, borderColor: COLORS.surface },
+  objectText: { fontWeight: 'bold', fontSize: 32 },
 
-  dataBox: { backgroundColor: COLORS.surface, padding: 15, borderRadius: 10, width: '100%', marginBottom: 20, alignItems: 'center' },
-  dataText: { color: COLORS.textSecondary, fontSize: 16, fontFamily: 'monospace', marginVertical: 2 },
-  
-  backButton: { padding: 15, backgroundColor: COLORS.surfaceDark, borderRadius: 8, borderWidth: 1, borderColor: COLORS.primary, width: '100%', alignItems: 'center' },
-  backButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' }
+  dataBox: { backgroundColor: COLORS.surfaceDark, padding: 15, borderRadius: 10, width: '100%', marginBottom: 20, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
+  dataText: { color: COLORS.textPrimary, fontSize: 16, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', marginVertical: 4, fontWeight: 'bold' },
 });

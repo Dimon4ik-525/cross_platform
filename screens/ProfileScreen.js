@@ -1,15 +1,16 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker'; 
-import { Ionicons } from '@expo/vector-icons'; // 🔥 Додали іконки
+import { Ionicons } from '@expo/vector-icons';
 import { UserContext } from '../context/UserContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../theme/colors'; 
+import { identifyUser } from '../services/analytics'; // 🔥 Імпортували сервіс аналітики
 
 export default function ProfileScreen() {
-  const { userName, userAvatar, saveUserName, saveUserAvatar, clearUserName } = useContext(UserContext);
+  const { userName, userAvatar, saveUserName, saveUserAvatar, clearUserName, userId } = useContext(UserContext);
   const navigation = useNavigation();
   const [inputValue, setInputValue] = useState('');
 
@@ -43,6 +44,10 @@ export default function ProfileScreen() {
   const handleSave = () => {
     if (inputValue.trim()) {
       saveUserName(inputValue);
+      
+      // 🔥 Ідентифікуємо юзера в Amplitude та Sentry
+      identifyUser(userId, inputValue.trim()); 
+      
       if (Platform.OS === 'web') alert('Ім\'я збережено!');
     }
   };
@@ -57,14 +62,15 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <Header />
       
-      {/* 🔥 НОВА ПАНЕЛЬ НАВІГАЦІЇ (ЗЛІВА ЗВЕРХУ) */}
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
-          <Text style={styles.backText}>НА ГОЛОВНУ</Text>
+          <Text style={styles.backText} numberOfLines={1}>НА ГОЛОВНУ</Text>
         </TouchableOpacity>
+        
         <Text style={styles.screenTitleText}>НАЛАШТУВАННЯ</Text>
-        <View style={{ width: 140 }} /> {/* Компенсатор для вирівнювання по центру */}
+        
+        <View style={styles.spacer} /> 
       </View>
 
       <View style={styles.scrollWrapper}>
@@ -110,9 +116,8 @@ export default function ProfileScreen() {
           
           <View style={styles.separator} />
 
-          {/* --- КНОПКИ ЛАБОРАТОРНИХ --- */}
           <TouchableOpacity 
-            style={[styles.labButton, { borderColor: COLORS.primary, marginBottom: 15 }]} 
+            style={styles.labButton} 
             onPress={() => navigation.navigate('Firebase')}
           >
             <Text style={styles.labButtonText}>☁️ ХМАРНІ НОТАТКИ</Text>
@@ -120,7 +125,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.labButton, { borderColor: COLORS.primary }]} 
+            style={[styles.labButton, { marginTop: 15 }]} 
             onPress={() => navigation.navigate('Map')}
           >
             <Text style={styles.labButtonText}>📍 РАДАР ГРАВЦІВ</Text>
@@ -128,7 +133,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.labButton, { marginTop: 15, borderColor: COLORS.primary }]} 
+            style={[styles.labButton, { marginTop: 15 }]} 
             onPress={() => navigation.navigate('Sensors')}
           >
             <Text style={styles.labButtonText}>📱 ТЕСТ ГЕЙМПАДА</Text>
@@ -137,20 +142,40 @@ export default function ProfileScreen() {
 
           <View style={styles.separator} />
 
-          <TouchableOpacity style={styles.labButton} onPress={() => navigation.navigate('Users')}>
+          <TouchableOpacity 
+            style={styles.labButton} 
+            onPress={() => navigation.navigate('Users')}
+          >
             <Text style={styles.labButtonText}>👥 ВІДКРИТИ СПИСОК ГЕЙМЕРІВ</Text>
             <Text style={styles.labSubText}>(Лаба 7: API запити)</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.labButton, styles.supportButton]} onPress={() => navigation.navigate('Support')}>
+          <TouchableOpacity 
+            style={[styles.labButton, { marginTop: 15 }]} 
+            onPress={() => navigation.navigate('Support')}
+          >
             <Text style={styles.labButtonText}>✉️ НАПИСАТИ В ПІДТРИМКУ</Text>
             <Text style={styles.labSubText}>(Лаба 8: Форми)</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.labButton, { marginTop: 15, borderColor: COLORS.success }]} onPress={() => navigation.navigate('Gallery')}>
+          <TouchableOpacity 
+            style={[styles.labButton, { marginTop: 15 }]} 
+            onPress={() => navigation.navigate('Gallery')}
+          >
             <Text style={styles.labButtonText}>🖼 ВІДКРИТИ ГАЛЕРЕЮ</Text>
             <Text style={styles.labSubText}>(Лаба 10: Зображення)</Text>
           </TouchableOpacity>
+
+          {/* --- 🔥 СЕКРЕТНА ПАНЕЛЬ АДМІНІСТРАТОРА (БЕЗПЕЧНИЙ ВИКЛИК ЧЕРЕЗ .env) --- */}
+          {userId === process.env.EXPO_PUBLIC_ADMIN_ID && (
+            <TouchableOpacity 
+              style={[styles.labButton, { marginTop: 40, borderColor: COLORS.danger, backgroundColor: 'rgba(255, 82, 82, 0.1)' }]} 
+              onPress={() => navigation.navigate('Admin')} 
+            >
+              <Text style={[styles.labButtonText, { color: COLORS.danger }]}>🛠 ПАНЕЛЬ АДМІНІСТРАТОРА</Text>
+              <Text style={styles.labSubText}>(Sentry & Amplitude)</Text>
+            </TouchableOpacity>
+          )}
 
         </ScrollView>
       </View>
@@ -163,7 +188,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   
-  /* 🔥 СТИЛІ НАВІГАЦІЙНОЇ ПАНЕЛІ */
   navBar: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -175,6 +199,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceDark
   },
   backBtn: { flexDirection: 'row', alignItems: 'center', width: 140 },
+  spacer: { width: 140 }, 
   backText: { color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
   screenTitleText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
 
@@ -209,8 +234,17 @@ const styles = StyleSheet.create({
   hint: { color: COLORS.textMuted, fontSize: 14, alignSelf: 'flex-start', marginLeft: 5, marginTop: 5 },
   separator: { height: 1, backgroundColor: COLORS.border, width: '100%', marginVertical: 30 },
   
-  labButton: { backgroundColor: COLORS.surfaceDark, paddingVertical: 15, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', width: '100%', ...Platform.select({ web: { cursor: 'pointer' } }) },
-  supportButton: { marginTop: 15, borderColor: COLORS.danger },
+  labButton: { 
+    backgroundColor: COLORS.surfaceDark, 
+    paddingVertical: 15, 
+    paddingHorizontal: 20, 
+    borderRadius: 10, 
+    borderWidth: 1, 
+    borderColor: COLORS.primary,
+    alignItems: 'center', 
+    width: '100%', 
+    ...Platform.select({ web: { cursor: 'pointer' } }) 
+  },
   labButtonText: { color: COLORS.primary, fontWeight: 'bold', fontSize: 16 },
   labSubText: { color: COLORS.textMuted, fontSize: 12, marginTop: 5 } 
 });

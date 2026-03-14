@@ -7,6 +7,9 @@ import { COLORS } from '../theme/colors';
 import SubscriptionModal from '../components/SubscriptionModal';
 import Footer from '../components/Footer';
 
+// 🔥 Імпортуємо наш сервіс аналітики
+import { logVortexEvent } from '../services/analytics';
+
 export default function DetailsScreen({ route }) {
   const { game } = route.params;
   const { countryCode, countryName } = useContext(UserContext); 
@@ -32,6 +35,15 @@ export default function DetailsScreen({ route }) {
   useEffect(() => {
     checkSubscriptionStatus();
     fetchSteamPrice(); 
+    
+    // 🔥 АНАЛІТИКА: Фіксуємо перегляд гри
+    logVortexEvent('Item_Viewed', {
+      game_id: game.gameID || game.dealID,
+      game_title: gameTitle,
+      steam_id: game.steamAppID || 'none',
+      price: game.salePrice
+    });
+
   }, []);
 
   const fetchSteamPrice = async () => {
@@ -46,21 +58,21 @@ export default function DetailsScreen({ route }) {
       const cacheBuster = new Date().getTime();
       const targetUrl = `https://store.steampowered.com/api/appdetails?appids=${game.steamAppID}&cc=${safeCountryCode}&l=ukrainian&v=${cacheBuster}`;
       
-      // 🔥 Використовуємо CodeTabs Proxy — він стабільніший за AllOrigins для Steam
+      // Використовуємо CodeTabs Proxy
       const fetchUrl = Platform.OS === 'web' 
         ? `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(targetUrl)}`
         : targetUrl;
 
       const res = await fetch(fetchUrl);
       
-      // БРОНЕБІЙНИЙ ПАРСИНГ: Читаємо як текст, щоб не впасти, якщо Steam видасть HTML-помилку
+      // БРОНЕБІЙНИЙ ПАРСИНГ
       const textResponse = await res.text();
       let data = null;
       
       try {
         data = JSON.parse(textResponse);
       } catch (parseError) {
-        console.warn("Steam відмовив у доступі (Rate Limit). Залишаємо базові ціни CheapShark.");
+        console.warn("Steam відмовив у доступі. Залишаємо базові ціни.");
         setIsSteamLoading(false);
         return;
       }
@@ -76,7 +88,6 @@ export default function DetailsScreen({ route }) {
         } else if (steamData.data.price_overview) {
           const overview = steamData.data.price_overview;
           
-          // Отримуємо офіційну гривню від Steam!
           setDisplayNewPrice(overview.final_formatted);
           
           if (overview.discount_percent > 0) {
@@ -123,6 +134,12 @@ export default function DetailsScreen({ route }) {
   };
 
   const openInSteam = () => {
+    // 🔥 АНАЛІТИКА: Фіксуємо клік на кнопку переходу в Steam
+    logVortexEvent('Steam_Opened', {
+      game_title: gameTitle,
+      steam_id: game.steamAppID || 'none'
+    });
+
     const url = game.steamAppID 
         ? `https://store.steampowered.com/app/${game.steamAppID}/`
         : `https://www.cheapshark.com/redirect?dealID=${game.dealID}`;

@@ -1,9 +1,15 @@
+import React, { useEffect } from 'react'; // 🔥 Додали useEffect
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleSheet } from 'react-native';
+
+// 🔥 ІМПОРТИ ДЛЯ ЛАБОРАТОРНОЇ №13 (SENTRY ТА AMPLITUDE)
+import * as Sentry from 'sentry-expo';
+import * as Amplitude from '@amplitude/analytics-react-native';
+import { logVortexEvent } from './services/analytics'; // 🔥 Імпортували наш сервіс
 
 import { UserProvider } from './context/UserContext';
 import { COLORS } from './theme/colors'; 
@@ -18,7 +24,22 @@ import SupportScreen from './screens/SupportScreen';
 import GalleryScreen from './screens/GalleryScreen'; 
 import MapScreen from './screens/MapScreen';
 import SensorScreen from './screens/SensorScreen';
-import FirebaseScreen from './screens/FirebaseScreen'; // 🔥 ДОДАЛИ НАШ ХМАРНИЙ ЕКРАН
+import FirebaseScreen from './screens/FirebaseScreen'; 
+import AdminScreen from './screens/AdminScreen';
+
+// --- ІНІЦІАЛІЗАЦІЯ SENTRY (Моніторинг помилок) ---
+// Sentry буде автоматично ловити всі краші додатку
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enableInExpoDevelopment: true, // Ловить краші навіть під час розробки (в Expo Go)
+  debug: false, 
+});
+
+// --- ІНІЦІАЛІЗАЦІЯ AMPLITUDE (Продуктова аналітика) ---
+if (process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY) {
+  Amplitude.init(process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY);
+  console.log('✅ Amplitude успішно підключено!');
+}
 
 const Stack = createStackNavigator();
 
@@ -34,12 +55,19 @@ const linking = {
       Gallery: 'gallery',
       Map: 'map',
       Sensors: 'sensors',
-      Firebase: 'wishlist' // 🔥 Додали лінк для вебу
+      Firebase: 'wishlist',
+      Admin: 'admin' // Додав глибоке посилання і для адмінки про всяк випадок
     },
   },
 };
 
 export default function App() {
+  
+  // 🔥 ТРЕКАЄМО ВІДКРИТТЯ ДОДАТКУ
+  useEffect(() => {
+    logVortexEvent('App_Opened', { platform: Platform.OS });
+  }, []);
+
   return (
     <UserProvider>
       <SafeAreaProvider style={styles.appContainer}>
@@ -71,16 +99,15 @@ export default function App() {
             <Stack.Screen name="Gallery" component={GalleryScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Map" component={MapScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Sensors" component={SensorScreen} options={{ headerShown: false }} />
-            
-            {/* Екрани ЗІ стандартною шапкою */}
-            <Stack.Screen name="Details" component={DetailsScreen} options={{ title: 'Деталі гри' }} />
             <Stack.Screen name="Subs" component={SubsScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Users" component={UsersScreen} options={{ title: 'Спільнота' }} />
-            <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Підтримка' }} />
-            
-            {/* 🔥 НАШ НОВИЙ ЕКРАН БАЗИ ДАНИХ */}
+            <Stack.Screen name="Users" component={UsersScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Support" component={SupportScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Admin" component={AdminScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Firebase" component={FirebaseScreen} options={{ headerShown: false }} />
 
+            {/* Екрани ЗІ стандартною шапкою */}
+            <Stack.Screen name="Details" component={DetailsScreen} options={{ title: 'Деталі гри', headerBackTitle: 'На головну' }} />
+            
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>

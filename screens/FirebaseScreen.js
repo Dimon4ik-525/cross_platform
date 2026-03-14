@@ -10,8 +10,10 @@ import { UserContext } from '../context/UserContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
+// 🔥 Імпортуємо наш сервіс аналітики
+import { logVortexEvent } from '../services/analytics';
+
 export default function FirebaseScreen() {
-  //userName тут завжди актуальний з профілю
   const { userName, userId } = useContext(UserContext);
   const navigation = useNavigation();
   const [title, setTitle] = useState('');
@@ -42,10 +44,31 @@ export default function FirebaseScreen() {
         authorId: userId,
         createdAt: serverTimestamp()
       });
+      
+      // 🔥 АНАЛІТИКА: Фіксуємо додавання запису
+      logVortexEvent('Record_Added', { 
+        game_title: title,
+        author: userName 
+      });
+
       setTitle('');
       Keyboard.dismiss();
     } catch (e) {
       alert("Помилка запису");
+    }
+  };
+
+  // 🔥 Винесли видалення в окрему функцію для зручності трекання
+  const handleDelete = async (id, gameTitle) => {
+    try {
+      // 🔥 АНАЛІТИКА: Фіксуємо видалення запису
+      logVortexEvent('Record_Deleted', { 
+        game_title: gameTitle 
+      });
+      
+      await deleteDoc(doc(db, "wishlist", id));
+    } catch (error) {
+      console.error("Помилка видалення:", error);
     }
   };
 
@@ -81,22 +104,19 @@ export default function FirebaseScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={{ paddingBottom: 20 }}
           renderItem={({ item }) => {
-            // Перевіряємо, чи цей пост належить поточному юзеру
             const isMyPost = item.authorId === userId;
 
             return (
               <View style={[styles.itemCard, isMyPost && styles.myPostCard]}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.itemTitle}>{item.title}</Text>
-                  
-                  {/* МАГІЯ: якщо пост мій - показуємоuserName з контексту, інакше - те, що в базі */}
                   <Text style={styles.authorText}>
                     Додав: {isMyPost ? `${userName} (Ви)` : item.authorName}
                   </Text>
                 </View>
                 
                 {isMyPost && (
-                  <TouchableOpacity onPress={() => deleteDoc(doc(db, "wishlist", item.id))}>
+                  <TouchableOpacity onPress={() => handleDelete(item.id, item.title)}>
                     <Ionicons name="trash-outline" size={22} color={COLORS.danger} />
                   </TouchableOpacity>
                 )}

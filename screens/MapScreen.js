@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, TouchableOpacity, Alert, Platform } from 'react-native';
 // НОРМАЛЬНИЙ ІМПОРТ: тепер він не зламає веб, бо веб цей файл навіть не побачить!
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons'; // 🔥 Додали іконки
+import { useNavigation } from '@react-navigation/native';
+
 import Header from '../components/Header';
+import Footer from '../components/Footer'; // 🔥 Додали футер для єдиного стилю
 import { COLORS } from '../theme/colors';
 
-export default function MapScreen({ navigation }) {
+export default function MapScreen() {
+  const navigation = useNavigation();
   const [location, setLocation] = useState(null);
   const [country, setCountry] = useState('Визначаємо...');
   const [loading, setLoading] = useState(true);
@@ -44,6 +49,19 @@ export default function MapScreen({ navigation }) {
     <View style={styles.container}>
       <Header />
       
+      {/* 🔥 ФІРМОВА ПАНЕЛЬ НАВІГАЦІЇ VORTEX */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Text style={styles.backText} numberOfLines={1}>НАЗАД</Text>
+        </TouchableOpacity>
+        
+        <Text style={styles.screenTitleText}>РАДАР ГРАВЦІВ</Text>
+        
+        <View style={styles.spacer} /> 
+      </View>
+
+      {/* КОНТЕНТ */}
       {loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={COLORS.primary} />
@@ -51,7 +69,6 @@ export default function MapScreen({ navigation }) {
         </View>
       ) : location ? (
         <View style={styles.content}>
-          <Text style={styles.title}>📍 Радар гравців</Text>
           
           <View style={styles.mapContainer}>
             <MapView
@@ -78,34 +95,54 @@ export default function MapScreen({ navigation }) {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>← Назад до профілю</Text>
-          </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.centerBox}>
           <Text style={styles.errorText}>Локація недоступна ❌</Text>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>← Назад</Text>
-          </TouchableOpacity>
         </View>
       )}
+
+      <Footer />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  
+  /* 🔥 СТИЛІ НАВІГАЦІЇ VORTEX */
+  navBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 15, 
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surfaceDark
+  },
+  backBtn: { flexDirection: 'row', alignItems: 'center', width: 100, ...Platform.select({ web: { cursor: 'pointer' } }) },
+  spacer: { width: 100 }, 
+  backText: { color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
+  screenTitleText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
+
   content: { flex: 1, padding: 20, alignItems: 'center' },
   centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 22, fontWeight: 'bold', color: COLORS.primary, marginBottom: 15 },
+  
   loadingText: { color: COLORS.textMuted, marginTop: 10, fontSize: 16 },
   errorText: { color: COLORS.danger, fontSize: 18, marginBottom: 20 },
-  mapContainer: { width: '100%', height: 300, borderRadius: 15, overflow: 'hidden', borderWidth: 2, borderColor: COLORS.border, marginBottom: 20 },
+  
+  mapContainer: { 
+    width: '100%', height: 350, borderRadius: 15, overflow: 'hidden', 
+    borderWidth: 2, borderColor: COLORS.border, marginBottom: 20,
+    ...Platform.select({
+      ios: { shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 5 },
+      android: { elevation: 5 },
+    }),
+  },
   map: { width: '100%', height: '100%' },
-  infoBox: { backgroundColor: COLORS.surface, padding: 15, borderRadius: 10, width: '100%', alignItems: 'center', marginBottom: 20 },
-  infoTitle: { color: COLORS.textSecondary, fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
-  infoDesc: { color: COLORS.success, fontSize: 14, textAlign: 'center' },
-  backButton: { padding: 15, backgroundColor: COLORS.surfaceDark, borderRadius: 8, borderWidth: 1, borderColor: COLORS.primary, width: '100%', alignItems: 'center' },
-  backButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' }
+  
+  infoBox: { backgroundColor: COLORS.surfaceDark, padding: 20, borderRadius: 10, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: COLORS.surface },
+  infoTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  infoDesc: { color: COLORS.success, fontSize: 14, textAlign: 'center', lineHeight: 20 }
 });

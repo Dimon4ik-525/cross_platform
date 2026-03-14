@@ -1,16 +1,32 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { COLORS } from '../theme/colors';
 
-export default function GalleryScreen({ navigation }) {
+export default function GalleryScreen() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <Header />
       
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.screenTitle}>🖼 Медіа Галерея</Text>
+      {/* 🔥 ФІРМОВА ПАНЕЛЬ НАВІГАЦІЇ */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Text style={styles.backText} numberOfLines={1}>НАЗАД</Text>
+        </TouchableOpacity>
+        
+        <Text style={styles.screenTitleText}>ГАЛЕРЕЯ</Text>
+        
+        <View style={styles.spacer} /> 
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         
         {/* --- ЛОКАЛЬНЕ ЗОБРАЖЕННЯ --- */}
         <View style={styles.imageBlock}>
@@ -21,7 +37,7 @@ export default function GalleryScreen({ navigation }) {
                 resizeMode="contain"
             />
             <Text style={styles.description}>
-                Зображення завантажено з папки assets. Режим "contain" гарантує, що вся картинка влізе у виділений блок, не обрізаючись.
+                Зображення завантажено з папки assets. Режим "contain" гарантує, що вся картинка влізе у виділений блок.
             </Text>
         </View>
 
@@ -36,14 +52,9 @@ export default function GalleryScreen({ navigation }) {
                 resizeMode="cover"
             />
             <Text style={styles.description}>
-                Зображення завантажено по URL у високій роздільній здатності. Режим "cover" масштабує зображення так, щоб воно повністю заповнило блок без втрати пропорцій.
+                Зображення завантажено по URL. Режим "cover" масштабує фото так, щоб воно повністю заповнило блок.
             </Text>
         </View>
-        
-        {/* Кнопка повернення */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>← ПОВЕРНУТИСЬ НАЗАД</Text>
-        </TouchableOpacity>
 
       </ScrollView>
 
@@ -54,25 +65,39 @@ export default function GalleryScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { flexGrow: 1, padding: 20, alignItems: 'center' },
-  screenTitle: { fontSize: 24, fontWeight: 'bold', color: COLORS.primary, marginBottom: 30, textAlign: 'center' },
+  
+  /* СТИЛІ НАВІГАЦІЇ VORTEX */
+  navBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 15, 
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surfaceDark
+  },
+  backBtn: { flexDirection: 'row', alignItems: 'center', width: 120 },
+  spacer: { width: 120 }, 
+  backText: { color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
+  screenTitleText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
+
+  content: { flexGrow: 1, padding: 20, alignItems: 'center', paddingBottom: 40 },
+  
   imageBlock: {
     width: '100%', backgroundColor: COLORS.surfaceDark, padding: 15, borderRadius: 10,
-    alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: COLORS.border,
+    alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: COLORS.surface,
     ...Platform.select({
-      ios: { shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 4 },
-      android: { elevation: 6 },
-      web: { boxShadow: `0px 4px 10px ${COLORS.primary}33` } // Неонова тінь
+      ios: { shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 4 },
+      android: { elevation: 4 },
+      web: { boxShadow: `0px 4px 10px ${COLORS.primary}22` }
     }),
   },
   imageTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
   description: { color: COLORS.textMuted, fontSize: 13, marginTop: 15, textAlign: 'center', lineHeight: 20 },
   
-  localImage: { width: 200, height: 200, backgroundColor: COLORS.surface, borderRadius: 20, borderWidth: 2, borderColor: COLORS.primary },
-  networkImage: { width: '100%', height: 200, borderRadius: 10, borderWidth: 1, borderColor: COLORS.primary },
+  localImage: { width: 220, height: 220, backgroundColor: COLORS.surface, borderRadius: 15, borderWidth: 2, borderColor: COLORS.primary },
+  networkImage: { width: '100%', height: 200, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
   
-  separator: { height: 2, backgroundColor: COLORS.border, width: '80%', marginVertical: 10 },
-  
-  backButton: { marginTop: 20, padding: 15, backgroundColor: COLORS.surfaceDark, borderRadius: 8, borderWidth: 1, borderColor: COLORS.primary, width: '100%', alignItems: 'center', ...Platform.select({ web: { cursor: 'pointer' } }) },
-  backButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' }
+  separator: { height: 1, backgroundColor: COLORS.border, width: '90%', marginVertical: 20 }
 });

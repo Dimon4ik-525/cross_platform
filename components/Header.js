@@ -3,7 +3,7 @@ import { Text, StyleSheet, TouchableOpacity, View, Platform } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme/colors'; // 🔥 ПІДКЛЮЧИЛИ НАШУ ДИЗАЙН-СИСТЕМУ
+import { COLORS } from '../theme/colors'; 
 
 export default function Header() {
   const navigation = useNavigation();
@@ -41,14 +41,14 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   safeContainer: {
-    backgroundColor: COLORS.surfaceDark, // Темний фон шапки
+    backgroundColor: COLORS.surfaceDark,
     borderBottomWidth: 2,
-    borderBottomColor: COLORS.border,    // Зеленувата обводка
+    borderBottomColor: COLORS.border,    
     width: '100%',
     
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.primary, // Неонова тінь на iOS
+        shadowColor: COLORS.primary, 
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 4.65,
@@ -60,7 +60,6 @@ const styles = StyleSheet.create({
         position: 'sticky', 
         top: 0, 
         zIndex: 1000, 
-        // 🔥 Неонове свічення у вебі замість нудної чорної тіні
         boxShadow: `0px 4px 15px ${COLORS.primary}33`, 
       }
     }),
