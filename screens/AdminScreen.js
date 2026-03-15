@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import * as Sentry from 'sentry-expo'; 
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -13,16 +12,14 @@ export default function AdminScreen() {
 
   const crashMyApp = () => {
     if (Platform.OS === 'web') {
-      // Бронебійний варіант для браузера
       const confirmCrash = window.confirm("УВАГА! Зараз додаток впаде. Згенерувати фатальну помилку?");
       if (confirmCrash) {
-        throw new Error("Test Sentry Error від студента!");
+        throw new Error("Test Sentry Error від студента!"); 
       }
     } else {
-      // Красивий варіант для мобільних пристроїв
       Alert.alert(
         "УВАГА!", 
-        "Зараз додаток впаде. Звіт полетить у Sentry.",
+        "Зараз додаток впаде. Звіт полетить у Sentry (тільки у Web-версії).",
         [
           { text: "Відміна", style: "cancel" },
           { 
@@ -58,7 +55,6 @@ export default function AdminScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         
-        {/* 🔥 ВИПРАВЛЕНИЙ БЛОК: Тепер він яскраво-жовтий */}
         <View style={styles.warningHeader}>
           <Ionicons name="warning-outline" size={40} color="#ffb703" />
           <Text style={styles.warningTitle}>НЕБЕЗПЕЧНА ЗОНА</Text>
@@ -107,7 +103,6 @@ const styles = StyleSheet.create({
 
   content: { padding: 20, alignItems: 'center', paddingBottom: 40 },
   
-  // 🔥 ОСЬ ТУТ ЯСКАРВІ КОЛЬОРИ ЗАМІСТЬ COLORS.warning
   warningHeader: { alignItems: 'center', marginBottom: 30, backgroundColor: 'rgba(255, 183, 3, 0.1)', padding: 20, borderRadius: 10, borderWidth: 1, borderColor: '#ffb703', width: '100%' },
   warningTitle: { color: '#ffb703', fontSize: 20, fontWeight: 'bold', marginTop: 10, marginBottom: 5, letterSpacing: 2 },
   warningDesc: { color: '#e2e8f0', textAlign: 'center', fontSize: 13, lineHeight: 20 },

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'; // 🔥 Додали useEffect
+import React, { useEffect } from 'react'; 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
@@ -6,10 +6,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleSheet } from 'react-native';
 
-// 🔥 ІМПОРТИ ДЛЯ ЛАБОРАТОРНОЇ №13 (SENTRY ТА AMPLITUDE)
-import * as Sentry from 'sentry-expo';
-import * as Amplitude from '@amplitude/analytics-react-native';
-import { logVortexEvent } from './services/analytics'; // 🔥 Імпортували наш сервіс
+// 🔥 ІМПОРТИ ДЛЯ ЛАБОРАТОРНОЇ №13 (БЕЗПЕЧНІ)
+// Ми видалили прямі імпорти Sentry та Amplitude, щоб iPhone не крашився в Expo Go.
+// Замість цього викликаємо розумний сервіс:
+import { initAnalytics, logVortexEvent } from './services/analytics';
 
 import { UserProvider } from './context/UserContext';
 import { COLORS } from './theme/colors'; 
@@ -27,19 +27,9 @@ import SensorScreen from './screens/SensorScreen';
 import FirebaseScreen from './screens/FirebaseScreen'; 
 import AdminScreen from './screens/AdminScreen';
 
-// --- ІНІЦІАЛІЗАЦІЯ SENTRY (Моніторинг помилок) ---
-// Sentry буде автоматично ловити всі краші додатку
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  enableInExpoDevelopment: true, // Ловить краші навіть під час розробки (в Expo Go)
-  debug: false, 
-});
-
-// --- ІНІЦІАЛІЗАЦІЯ AMPLITUDE (Продуктова аналітика) ---
-if (process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY) {
-  Amplitude.init(process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY);
-  console.log('✅ Amplitude успішно підключено!');
-}
+// --- ІНІЦІАЛІЗАЦІЯ АНАЛІТИКИ ---
+// Ця функція сама вирішить: запустити справжню аналітику (у Web) чи безпечну заглушку (на телефоні)
+initAnalytics();
 
 const Stack = createStackNavigator();
 
@@ -56,7 +46,7 @@ const linking = {
       Map: 'map',
       Sensors: 'sensors',
       Firebase: 'wishlist',
-      Admin: 'admin' // Додав глибоке посилання і для адмінки про всяк випадок
+      Admin: 'admin' 
     },
   },
 };
