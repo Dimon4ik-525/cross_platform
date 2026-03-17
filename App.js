@@ -1,14 +1,15 @@
-import React, { useEffect } from 'react'; 
+import React, { useEffect, useState } from 'react'; 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, View, ActivityIndicator } from 'react-native';
+
+// 🔥 ПРАВИЛЬНИЙ ІМПОРТ ДЛЯ ШРИФТІВ
+import * as Font from 'expo-font';
 
 // 🔥 ІМПОРТИ ДЛЯ ЛАБОРАТОРНОЇ №13 (БЕЗПЕЧНІ)
-// Ми видалили прямі імпорти Sentry та Amplitude, щоб iPhone не крашився в Expo Go.
-// Замість цього викликаємо розумний сервіс:
 import { initAnalytics, logVortexEvent } from './services/analytics';
 
 import { UserProvider } from './context/UserContext';
@@ -28,7 +29,6 @@ import FirebaseScreen from './screens/FirebaseScreen';
 import AdminScreen from './screens/AdminScreen';
 
 // --- ІНІЦІАЛІЗАЦІЯ АНАЛІТИКИ ---
-// Ця функція сама вирішить: запустити справжню аналітику (у Web) чи безпечну заглушку (на телефоні)
 initAnalytics();
 
 const Stack = createStackNavigator();
@@ -52,11 +52,42 @@ const linking = {
 };
 
 export default function App() {
+  // Стейт для перевірки завантаження шрифтів
+  const [fontsLoaded, setFontsLoaded] = useState(false);
   
-  // 🔥 ТРЕКАЄМО ВІДКРИТТЯ ДОДАТКУ
+  // 🔥 ЗАВАНТАЖЕННЯ ШРИФТІВ, ЯКЕ FIREFOX НЕ БЛОКУЄ
   useEffect(() => {
+    async function loadAppFonts() {
+      try {
+        if (Platform.OS === 'web') {
+          // Для вебу примусово вантажимо з CDN, щоб оминути Firefox Sanitizer
+          await Font.loadAsync({
+            Ionicons: { uri: 'https://cdn.jsdelivr.net/npm/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf' },
+            ionicons: { uri: 'https://cdn.jsdelivr.net/npm/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf' }
+  });
+        } else {
+          // Для мобільних додатків беремо стандартні
+          await Font.loadAsync(Ionicons.font);
+        }
+      } catch (error) {
+        console.warn('Помилка завантаження шрифтів:', error);
+      } finally {
+        setFontsLoaded(true);
+      }
+    }
+
+    loadAppFonts();
     logVortexEvent('App_Opened', { platform: Platform.OS });
   }, []);
+
+  // Поки шрифти вантажаться — показуємо індикатор (щоб уникнути помилок рендеру)
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <UserProvider>
